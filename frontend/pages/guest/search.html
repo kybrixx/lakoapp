@@ -1,0 +1,99 @@
+<div class="search-page">
+    <div class="search-header glass-card">
+        <button class="btn btn-outline" onclick="history.back()">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <div class="search-input-container">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchQuery" class="form-control" placeholder="Search...">
+        </div>
+        <button class="btn btn-primary" onclick="performSearch()">Search</button>
+    </div>
+
+    <div class="search-tabs glass-card">
+        <button class="tab-btn active" onclick="switchTab('all')">All</button>
+        <button class="tab-btn" onclick="switchTab('vendors')">Vendors</button>
+        <button class="tab-btn" onclick="switchTab('products')">Products</button>
+    </div>
+
+    <div id="searchResults" class="search-results"></div>
+</div>
+
+<style>
+.search-page { max-width: 900px; margin: 0 auto; padding: 20px; }
+.search-header { display: flex; gap: 12px; padding: 12px 20px; margin-bottom: 20px; }
+.search-input-container { flex: 1; display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.7); padding: 0 16px; border-radius: 40px; }
+.search-input-container input { background: transparent; border: none; }
+.search-tabs { display: flex; gap: 8px; padding: 8px; margin-bottom: 24px; }
+.tab-btn { padding: 10px 24px; border: none; background: transparent; border-radius: 40px; cursor: pointer; }
+.tab-btn.active { background: var(--primary); color: white; }
+.result-item { background: var(--surface); border-radius: 20px; padding: 16px; margin-bottom: 12px; cursor: pointer; }
+</style>
+
+<script>
+let currentTab = 'all';
+let currentQuery = '';
+
+document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    currentQuery = params.get('q') || '';
+    document.getElementById('searchQuery').value = currentQuery;
+    if (currentQuery) performSearch();
+});
+
+function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    performSearch();
+}
+
+async function performSearch() {
+    const query = document.getElementById('searchQuery').value;
+    if (!query) return;
+    
+    try {
+        const data = await api.search(query, currentTab);
+        renderResults(data);
+    } catch (error) {
+        console.error('Search error:', error);
+    }
+}
+
+function renderResults(data) {
+    const container = document.getElementById('searchResults');
+    let html = '';
+    
+    if (data.vendors?.length) {
+        html += '<h3>Vendors</h3>';
+        html += data.vendors.map(v => `
+            <div class="result-item" onclick="viewVendor('${v.id}')">
+                <h4>${v.business_name}</h4>
+                <p>${v.category}</p>
+                <p>⭐ ${v.rating || 0}</p>
+            </div>
+        `).join('');
+    }
+    
+    if (data.products?.length) {
+        html += '<h3>Products</h3>';
+        html += data.products.map(p => `
+            <div class="result-item" onclick="viewProduct('${p.id}')">
+                <h4>${p.name}</h4>
+                <p>${p.vendor_name}</p>
+                <p>₱${p.price || 0}</p>
+            </div>
+        `).join('');
+    }
+    
+    container.innerHTML = html || '<p class="glass-card" style="padding: 40px; text-align: center;">No results found</p>';
+}
+
+function viewVendor(id) {
+    window.location.href = `/pages/guest/vendor-profile.html?id=${id}`;
+}
+
+function viewProduct(id) {
+    window.location.href = `/pages/guest/product-detail.html?id=${id}`;
+}
+</script>
