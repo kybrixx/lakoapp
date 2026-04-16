@@ -1,0 +1,94 @@
+<div class="chat-list-page">
+    <div class="page-header glass-card">
+        <button class="btn btn-outline" onclick="history.back()">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h1>Messages</h1>
+        <button class="btn btn-outline" onclick="syncService.sync()">
+            <i class="fas fa-sync-alt"></i>
+        </button>
+    </div>
+
+    <div class="search-bar glass-card">
+        <i class="fas fa-search"></i>
+        <input type="text" id="searchChats" placeholder="Search conversations..." class="form-control" oninput="filterConversations()">
+    </div>
+
+    <div id="conversationsList" class="conversations-list"></div>
+</div>
+
+<style>
+.chat-list-page { max-width: 600px; margin: 0 auto; padding: 20px; }
+.search-bar { display: flex; align-items: center; gap: 12px; padding: 12px 20px; margin-bottom: 20px; }
+.search-bar input { background: transparent; border: none; }
+.conversations-list { display: flex; flex-direction: column; gap: 8px; }
+.conversation-item { display: flex; align-items: center; gap: 16px; padding: 16px 20px; cursor: pointer; }
+.conversation-avatar { width: 56px; height: 56px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 20px; }
+.conversation-info { flex: 1; }
+.conversation-name { font-weight: 600; margin-bottom: 4px; }
+.conversation-last { font-size: 13px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.conversation-meta { text-align: right; }
+.conversation-time { font-size: 12px; color: var(--text-secondary); }
+.unread-badge { background: var(--primary); color: white; font-size: 11px; padding: 2px 8px; border-radius: 12px; margin-top: 4px; display: inline-block; }
+.empty-state { text-align: center; padding: 60px; }
+</style>
+
+<script>
+let conversations = [];
+let filteredConversations = [];
+
+document.addEventListener('DOMContentLoaded', loadConversations);
+
+async function loadConversations() {
+    try {
+        const data = await chatManager.loadConversations();
+        conversations = data.conversations || [];
+        filteredConversations = [...conversations];
+        renderConversations();
+    } catch (error) {
+        console.error('Error loading conversations:', error);
+    }
+}
+
+function renderConversations() {
+    const container = document.getElementById('conversationsList');
+    
+    if (!filteredConversations.length) {
+        container.innerHTML = `
+            <div class="empty-state glass-card">
+                <i class="fas fa-comments" style="font-size: 48px; color: var(--text-secondary); margin-bottom: 20px;"></i>
+                <h3>No messages yet</h3>
+                <p>Start a conversation with a vendor</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = filteredConversations.map(c => `
+        <div class="conversation-item glass-card" onclick="openChat('${c.other_id}', '${c.other_name}')">
+            <div class="conversation-avatar">${c.other_name?.charAt(0) || 'V'}</div>
+            <div class="conversation-info">
+                <div class="conversation-name">${c.other_name || 'Unknown'}</div>
+                <div class="conversation-last">${c.last_message || 'No messages yet'}</div>
+            </div>
+            <div class="conversation-meta">
+                <div class="conversation-time">${formatTime(c.last_message_at)}</div>
+                ${c.unread_count ? `<span class="unread-badge">${c.unread_count}</span>` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+function filterConversations() {
+    const query = document.getElementById('searchChats').value.toLowerCase();
+    filteredConversations = conversations.filter(c => 
+        c.other_name?.toLowerCase().includes(query) ||
+        c.last_message?.toLowerCase().includes(query)
+    );
+    renderConversations();
+}
+
+function openChat(userId, userName) {
+    window.location.href = `/pages/customer/chat.html?vendor=${userId}`;
+}
+</script>

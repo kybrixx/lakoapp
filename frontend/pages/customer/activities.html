@@ -1,0 +1,139 @@
+<div class="activities-page">
+    <div class="page-header glass-card">
+        <button class="btn btn-outline" onclick="history.back()">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h1>Activity History</h1>
+        <button class="btn btn-outline" onclick="clearActivities()">
+            Clear History
+        </button>
+    </div>
+
+    <div class="activity-tabs glass-card">
+        <button class="tab-btn active" onclick="filterActivities('all')">All</button>
+        <button class="tab-btn" onclick="filterActivities('views')">Views</button>
+        <button class="tab-btn" onclick="filterActivities('reviews')">Reviews</button>
+        <button class="tab-btn" onclick="filterActivities('likes')">Likes</button>
+        <button class="tab-btn" onclick="filterActivities('chats')">Chats</button>
+    </div>
+
+    <div id="activitiesList" class="activities-list"></div>
+</div>
+
+<style>
+.activities-page { max-width: 700px; margin: 0 auto; padding: 20px; }
+.activity-tabs { display: flex; gap: 8px; padding: 8px; margin-bottom: 24px; overflow-x: auto; }
+.activity-item { display: flex; gap: 16px; padding: 16px 20px; margin-bottom: 12px; }
+.activity-icon { width: 48px; height: 48px; border-radius: 50%; background: var(--primary-light); color: white; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+.activity-details { flex: 1; }
+.activity-text { margin-bottom: 4px; }
+.activity-time { font-size: 12px; color: var(--text-secondary); }
+.activity-preview { margin-top: 8px; padding: 12px; background: rgba(0,0,0,0.02); border-radius: 12px; }
+</style>
+
+<script>
+let allActivities = [];
+let currentFilter = 'all';
+
+document.addEventListener('DOMContentLoaded', loadActivities);
+
+async function loadActivities() {
+    try {
+        const data = await api.request('/customer/activities');
+        allActivities = data.activities || [];
+        renderActivities();
+    } catch (error) {
+        console.error('Error loading activities:', error);
+    }
+}
+
+function filterActivities(type) {
+    currentFilter = type;
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    renderActivities();
+}
+
+function renderActivities() {
+    const container = document.getElementById('activitiesList');
+    const filtered = currentFilter === 'all' 
+        ? allActivities 
+        : allActivities.filter(a => getActivityType(a.action_type) === currentFilter);
+    
+    if (!filtered.length) {
+        container.innerHTML = '<p class="glass-card" style="padding: 40px; text-align: center;">No activities yet</p>';
+        return;
+    }
+    
+    container.innerHTML = filtered.map(a => `
+        <div class="activity-item glass-card" onclick="viewActivity('${a.id}', '${a.action_type}', '${a.target_id || ''}')">
+            <div class="activity-icon">
+                <i class="fas fa-${getActivityIcon(a.action_type)}"></i>
+            </div>
+            <div class="activity-details">
+                <div class="activity-text">${formatActivityText(a)}</div>
+                <div class="activity-time">${formatTime(a.created_at)}</div>
+                ${a.details ? `<div class="activity-preview">${a.details}</div>` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+function getActivityType(action) {
+    const types = {
+        'view_vendor': 'views',
+        'create_review': 'reviews',
+        'like_post': 'likes',
+        'like_review': 'likes',
+        'send_message': 'chats'
+    };
+    return types[action] || 'all';
+}
+
+function getActivityIcon(action) {
+    const icons = {
+        'view_vendor': 'eye',
+        'create_review': 'star',
+        'like_post': 'heart',
+        'like_review': 'heart',
+        'send_message': 'comment',
+        'add_shortlist': 'bookmark',
+        'create_post': 'pen'
+    };
+    return icons[action] || 'circle';
+}
+
+function formatActivityText(activity) {
+    const texts = {
+        'view_vendor': `Viewed ${activity.details || 'a vendor'}`,
+        'create_review': `Reviewed ${activity.details || 'a vendor'}`,
+        'like_post': 'Liked a post',
+        'like_review': 'Found a review helpful',
+        'send_message': `Messaged ${activity.details || 'a vendor'}`,
+        'add_shortlist': `Saved ${activity.details || 'a vendor'}`,
+        'create_post': 'Created a post'
+    };
+    return texts[activity.action_type] || activity.action_type;
+}
+
+function viewActivity(id, type, targetId) {
+    if (type === 'view_vendor' && targetId) {
+        window.location.href = `/pages/customer/vendor-profile.html?id=${targetId}`;
+    } else if (type === 'create_review' && targetId) {
+        window.location.href = `/pages/customer/vendor-profile.html?id=${targetId}`;
+    }
+}
+
+function clearActivities() {
+    confirmDialog('Clear all activity history?', async () => {
+        try {
+            await api.request('/customer/activities/clear', { method: 'DELETE' });
+            allActivities = [];
+            renderActivities();
+            showToast('History cleared', 'success');
+        } catch (error) {
+            showToast('Failed to clear history', 'error');
+        }
+    });
+}
+</script>

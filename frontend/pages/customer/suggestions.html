@@ -1,0 +1,132 @@
+<div class="suggestions-page">
+    <div class="page-header glass-card">
+        <button class="btn btn-outline" onclick="history.back()">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h1>Suggestions For You</h1>
+        <button class="btn btn-outline" onclick="refreshSuggestions()">
+            <i class="fas fa-sync-alt"></i>
+        </button>
+    </div>
+
+    <div id="suggestionsContent"></div>
+</div>
+
+<style>
+.suggestions-page { max-width: 900px; margin: 0 auto; padding: 20px; }
+.section-card { padding: 24px; margin-bottom: 24px; }
+.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.vendor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
+.suggestion-card { padding: 16px; cursor: pointer; }
+.suggestion-card img { width: 100%; height: 140px; object-fit: cover; border-radius: 16px; margin-bottom: 12px; }
+.area-card { padding: 20px; background: linear-gradient(135deg, var(--primary-light), var(--primary)); color: white; border-radius: 20px; cursor: pointer; }
+.traffic-high { color: #dc2626; }
+.traffic-medium { color: #eab308; }
+.traffic-low { color: #10b981; }
+</style>
+
+<script>
+let currentLocation = null;
+
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        currentLocation = await getLocation();
+    } catch (error) {
+        currentLocation = { lat: 14.5995, lng: 120.9842 };
+    }
+    loadSuggestions();
+});
+
+async function loadSuggestions() {
+    try {
+        const data = await api.getSuggestions(currentLocation.lat, currentLocation.lng);
+        renderSuggestions(data);
+    } catch (error) {
+        console.error('Error loading suggestions:', error);
+    }
+}
+
+function renderSuggestions(data) {
+    const container = document.getElementById('suggestionsContent');
+    
+    container.innerHTML = `
+        <div class="section-card glass-card">
+            <div class="section-header">
+                <h2><i class="fas fa-fire"></i> Trending Now</h2>
+            </div>
+            <div class="vendor-grid">
+                ${(data.trending || []).map(v => renderVendorCard(v)).join('')}
+            </div>
+        </div>
+        
+        <div class="section-card glass-card">
+            <div class="section-header">
+                <h2><i class="fas fa-star"></i> Recommended For You</h2>
+            </div>
+            <div class="vendor-grid">
+                ${(data.recommended || []).map(v => renderVendorCard(v)).join('')}
+            </div>
+        </div>
+        
+        <div class="section-card glass-card">
+            <div class="section-header">
+                <h2><i class="fas fa-history"></i> Similar to Your Past</h2>
+            </div>
+            <div class="vendor-grid">
+                ${(data.similar || []).map(v => renderVendorCard(v)).join('')}
+            </div>
+        </div>
+        
+        <div class="section-card glass-card">
+            <div class="section-header">
+                <h2><i class="fas fa-chart-line"></i> High Traffic Areas</h2>
+            </div>
+            <div class="vendor-grid">
+                ${(data.high_traffic || []).map(area => `
+                    <div class="area-card" onclick="viewArea('${area.lat}', '${area.lng}')">
+                        <h3>${area.name || 'High Traffic Zone'}</h3>
+                        <p>${area.vendor_count || 0} vendors</p>
+                        <p class="traffic-${area.level || 'high'}">🔥 ${area.level || 'High'} Traffic</p>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+        
+        <div class="section-card glass-card">
+            <div class="section-header">
+                <h2><i class="fas fa-medal"></i> Most Reviewed Vendors</h2>
+            </div>
+            <div class="vendor-grid">
+                ${(data.most_reviewed || []).map(v => renderVendorCard(v)).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function renderVendorCard(vendor) {
+    return `
+        <div class="suggestion-card glass-card" onclick="viewVendor('${vendor.id}')">
+            <img src="${vendor.logo || '/assets/images/default-vendor.png'}" alt="${vendor.business_name}">
+            <h4>${vendor.business_name}</h4>
+            <p style="font-size: 13px; color: var(--text-secondary);">${vendor.category}</p>
+            <div class="rating">${'★'.repeat(Math.floor(vendor.rating || 0))}${'☆'.repeat(5 - Math.floor(vendor.rating || 0))} ${vendor.rating || 0}</div>
+            <p style="font-size: 12px; margin-top: 8px;">
+                <i class="fas fa-map-marker-alt"></i> ${vendor.distance ? vendor.distance.toFixed(1) + ' km' : 'Nearby'}
+            </p>
+        </div>
+    `;
+}
+
+function viewVendor(id) {
+    window.location.href = `/pages/customer/vendor-profile.html?id=${id}`;
+}
+
+function viewArea(lat, lng) {
+    window.location.href = `/pages/customer/map.html?lat=${lat}&lng=${lng}`;
+}
+
+function refreshSuggestions() {
+    loadSuggestions();
+    showToast('Refreshing suggestions...', 'info');
+}
+</script>

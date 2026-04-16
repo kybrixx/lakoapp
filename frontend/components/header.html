@@ -3,27 +3,50 @@
         <button class="menu-toggle" onclick="toggleSidebar()">
             <i class="fas fa-bars"></i>
         </button>
-        <a href="/" class="logo">lako</a>
+        <a href="/" class="logo">
+            <span class="logo-text">lako</span>
+        </a>
     </div>
     
     <div class="header-center">
-        <div class="search-bar">
+        <div class="search-bar" onclick="goToSearch()">
             <i class="fas fa-search"></i>
-            <input type="text" placeholder="Search vendors, products..." id="globalSearch">
+            <span>Search vendors, products...</span>
         </div>
     </div>
     
     <div class="header-right">
         <button class="header-btn" onclick="goToChat()">
-            <i class="fas fa-comment"></i>
-            <span class="badge" id="unreadBadge" style="display: none;">0</span>
+            <i class="far fa-comment"></i>
+            <span class="badge" id="chatBadge" style="display: none;">0</span>
         </button>
-        <button class="header-btn" onclick="goToProfile()">
-            <i class="fas fa-user"></i>
+        <button class="header-btn" onclick="goToNotifications()">
+            <i class="far fa-bell"></i>
+            <span class="badge" id="notificationBadge" style="display: none;">0</span>
         </button>
-        <button class="header-btn" onclick="auth.logout(); window.location.href='/'">
-            <i class="fas fa-sign-out-alt"></i>
-        </button>
+        <div class="user-menu">
+            <button class="header-btn" onclick="toggleUserMenu()">
+                <i class="far fa-user"></i>
+            </button>
+            <div class="user-dropdown glass-card" id="userDropdown" style="display: none;">
+                <a href="/pages/customer/profile.html">
+                    <i class="far fa-user"></i> Profile
+                </a>
+                <a href="/pages/customer/shortlist.html">
+                    <i class="far fa-bookmark"></i> Shortlist
+                </a>
+                <a href="/pages/customer/activities.html">
+                    <i class="far fa-clock"></i> Activities
+                </a>
+                <a href="/pages/customer/settings.html">
+                    <i class="fas fa-cog"></i> Settings
+                </a>
+                <hr>
+                <a href="#" onclick="handleLogout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
     </div>
 </header>
 
@@ -35,6 +58,9 @@
     padding: 12px 24px;
     margin: 20px;
     border-radius: 60px;
+    position: sticky;
+    top: 20px;
+    z-index: 100;
 }
 
 .header-left, .header-right {
@@ -44,57 +70,65 @@
 }
 
 .logo {
-    font-size: 22px;
+    text-decoration: none;
+}
+
+.logo-text {
+    font-size: 24px;
     font-weight: 700;
     background: linear-gradient(135deg, #0a3b1a, #1a6e3a);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    text-decoration: none;
 }
 
 .search-bar {
     display: flex;
     align-items: center;
-    background: rgba(255, 255, 255, 0.7);
+    gap: 12px;
+    background: rgba(0, 0, 0, 0.04);
+    padding: 10px 24px;
     border-radius: 40px;
-    padding: 8px 20px;
     min-width: 300px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.search-bar:hover {
+    background: rgba(0, 0, 0, 0.08);
 }
 
 .search-bar i {
-    color: #5a6e5a;
-    margin-right: 12px;
+    color: var(--text-secondary);
 }
 
-.search-bar input {
-    background: transparent;
-    border: none;
-    outline: none;
+.search-bar span {
+    color: var(--text-secondary);
     font-size: 14px;
-    width: 100%;
 }
 
 .header-btn {
-    background: rgba(0, 0, 0, 0.06);
+    position: relative;
+    width: 44px;
+    height: 44px;
     border: none;
-    width: 40px;
-    height: 40px;
+    background: rgba(0, 0, 0, 0.04);
     border-radius: 50%;
     cursor: pointer;
-    color: #1a2a1f;
-    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: all 0.2s;
 }
 
 .header-btn:hover {
-    background: rgba(0, 0, 0, 0.12);
+    background: rgba(0, 0, 0, 0.08);
 }
 
 .badge {
     position: absolute;
-    top: -4px;
-    right: -4px;
+    top: -2px;
+    right: -2px;
     background: #dc2626;
     color: white;
     font-size: 10px;
@@ -103,16 +137,67 @@
     min-width: 18px;
 }
 
+.user-menu {
+    position: relative;
+}
+
+.user-dropdown {
+    position: absolute;
+    top: 52px;
+    right: 0;
+    min-width: 200px;
+    padding: 8px;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.user-dropdown a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    color: var(--text-primary);
+    text-decoration: none;
+    border-radius: 12px;
+    transition: all 0.2s;
+}
+
+.user-dropdown a:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.user-dropdown hr {
+    margin: 8px 0;
+    border: none;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
 .menu-toggle {
     display: none;
 }
 
 @media (max-width: 768px) {
+    .app-header {
+        margin: 10px;
+        padding: 12px 16px;
+    }
+    
     .menu-toggle {
         display: block;
     }
+    
     .search-bar {
         min-width: auto;
+        padding: 8px 16px;
+    }
+    
+    .search-bar span {
+        display: none;
+    }
+    
+    .header-center {
+        flex: 1;
+        margin: 0 12px;
     }
 }
 </style>
@@ -125,17 +210,52 @@ function toggleSidebar() {
     }
 }
 
+function toggleUserMenu() {
+    const dropdown = document.getElementById('userDropdown');
+    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+}
+
+function goToSearch() {
+    window.location.href = '/pages/customer/search.html';
+}
+
 function goToChat() {
-    const role = auth.getUserRole();
-    if (role === 'customer') {
-        window.location.href = '/pages/customer/chat-list.html';
-    } else if (role === 'vendor') {
-        window.location.href = '/pages/vendor/inquiries.html';
+    window.location.href = '/pages/customer/chat-list.html';
+}
+
+function goToNotifications() {
+    window.location.href = '/pages/customer/notifications.html';
+}
+
+function handleLogout() {
+    auth.logout();
+    window.location.href = '/';
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('userDropdown');
+    const userBtn = e.target.closest('.user-menu');
+    if (dropdown && !userBtn) {
+        dropdown.style.display = 'none';
+    }
+});
+
+// Load unread counts
+async function loadUnreadCounts() {
+    try {
+        const chatData = await api.request('/chat/unread-count');
+        if (chatData.unread > 0) {
+            const badge = document.getElementById('chatBadge');
+            badge.textContent = chatData.unread;
+            badge.style.display = 'block';
+        }
+    } catch (error) {
+        // Ignore
     }
 }
 
-function goToProfile() {
-    const role = auth.getUserRole();
-    window.location.href = `/pages/${role}/profile.html`;
+if (auth.isAuthenticated()) {
+    loadUnreadCounts();
 }
 </script>
