@@ -1,0 +1,101 @@
+<div class="vendor-profile-page">
+    <button class="btn btn-outline back-btn" onclick="history.back()">
+        <i class="fas fa-arrow-left"></i> Back
+    </button>
+
+    <div id="vendorContent"></div>
+</div>
+
+<style>
+.vendor-profile-page { max-width: 1000px; margin: 0 auto; padding: 20px; }
+.back-btn { margin-bottom: 20px; }
+</style>
+
+<script>
+let vendorId = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    vendorId = params.get('id');
+    if (vendorId) loadVendorProfile();
+});
+
+async function loadVendorProfile() {
+    try {
+        const data = await api.getGuestVendor(vendorId);
+        renderVendorProfile(data);
+    } catch (error) {
+        console.error('Error loading vendor:', error);
+    }
+}
+
+function renderVendorProfile(data) {
+    const vendor = data.vendor;
+    const products = data.products || [];
+    const reviews = data.reviews || [];
+    
+    document.getElementById('vendorContent').innerHTML = `
+        <div class="profile-header glass-card">
+            <div class="cover-image">
+                <img src="${vendor.cover_image || '/assets/images/default-cover.jpg'}" alt="Cover">
+            </div>
+            <div class="profile-info">
+                <img src="${vendor.logo || '/assets/images/default-vendor.png'}" class="profile-logo">
+                <div class="profile-details">
+                    <h1>${vendor.name}</h1>
+                    <p class="category">${vendor.category}</p>
+                    <div class="rating">
+                        <span class="stars">${'★'.repeat(Math.floor(vendor.rating || 0))}${'☆'.repeat(5 - Math.floor(vendor.rating || 0))}</span>
+                        <span>${vendor.rating || 0} (${vendor.review_count || 0} reviews)</span>
+                    </div>
+                    <p class="address"><i class="fas fa-map-marker-alt"></i> ${vendor.address || 'Address not set'}</p>
+                    <p class="phone"><i class="fas fa-phone"></i> ${vendor.phone || 'No phone'}</p>
+                    <p class="traffic"><i class="fas fa-users"></i> ${vendor.traffic_count || 0} views</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="guest-message glass-card">
+            <i class="fas fa-info-circle"></i>
+            <span>Want to chat with this vendor or save to favorites? <a href="/pages/login.html">Sign in</a> or <a href="/pages/register.html">create an account</a>!</span>
+        </div>
+
+        <div class="products-section glass-card">
+            <h2><i class="fas fa-box"></i> Products (${products.length})</h2>
+            <div class="products-grid">
+                ${products.length ? products.map(p => `
+                    <div class="product-card" onclick="viewProduct('${p.id}')">
+                        <img src="${p.image || '/assets/images/placeholder.jpg'}" alt="${p.name}">
+                        <h4>${p.name}</h4>
+                        <p class="price">₱${p.price || 0}</p>
+                        <p class="category">${p.category || ''}</p>
+                    </div>
+                `).join('') : '<p>No products yet</p>'}
+            </div>
+        </div>
+
+        <div class="reviews-section glass-card">
+            <h2><i class="fas fa-star"></i> Reviews (${reviews.length})</h2>
+            <div class="reviews-list">
+                ${reviews.length ? reviews.slice(0, 5).map(r => `
+                    <div class="review-card">
+                        <div class="review-header">
+                            <span class="reviewer">${r.customer_name || 'Customer'}</span>
+                            <span class="stars">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</span>
+                            <span class="date">${formatTime(r.created_at)}</span>
+                        </div>
+                        <p>${r.comment || ''}</p>
+                    </div>
+                `).join('') : '<p>No reviews yet</p>'}
+            </div>
+            ${reviews.length > 5 ? `<button class="btn btn-outline" onclick="viewAllReviews()">See All Reviews</button>` : ''}
+        </div>
+    `;
+}
+
+function viewProduct(id) {
+    window.location.href = `/pages/guest/product-detail.html?id=${id}`;
+}
+
+function formatTime(t) { return t ? new Date(t).toLocaleDateString() : ''; }
+</script>

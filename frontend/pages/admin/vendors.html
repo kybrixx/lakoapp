@@ -1,0 +1,105 @@
+<div class="admin-page">
+    <div class="page-header glass-card">
+        <h1>Vendor Management</h1>
+        <div class="header-actions">
+            <input type="text" class="form-control" placeholder="Search vendors..." id="vendorSearch" oninput="filterVendors()">
+            <select class="form-control" id="statusFilter" onchange="filterVendors()">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="pending">Pending Verification</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="vendors-table glass-card">
+        <div class="table-header">
+            <span>Business</span>
+            <span>Owner</span>
+            <span>Category</span>
+            <span>Rating</span>
+            <span>Status</span>
+            <span>Actions</span>
+        </div>
+        <div id="vendorsList"></div>
+    </div>
+</div>
+
+<style>
+.vendors-table { padding: 0; overflow: hidden; }
+.vendors-table .table-header { display: grid; grid-template-columns: 2fr 1.5fr 1fr 0.8fr 1fr 1fr; padding: 16px 20px; background: rgba(0,0,0,0.02); font-weight: 600; border-bottom: 1px solid #eee; }
+.vendor-row { display: grid; grid-template-columns: 2fr 1.5fr 1fr 0.8fr 1fr 1fr; padding: 16px 20px; border-bottom: 1px solid #eee; align-items: center; }
+.vendor-row:hover { background: rgba(0,0,0,0.01); }
+.status-badge { padding: 4px 10px; border-radius: 40px; font-size: 12px; font-weight: 500; }
+.status-badge.active { background: #dcfce7; color: #16a34a; }
+.status-badge.inactive { background: #fee2e2; color: #dc2626; }
+.status-badge.pending { background: #fef3c7; color: #d97706; }
+</style>
+
+<script>
+let allVendors = [];
+
+document.addEventListener('DOMContentLoaded', loadVendors);
+
+async function loadVendors() {
+    try {
+        const data = await api.getAdminVendors();
+        allVendors = data.vendors || [];
+        renderVendors(allVendors);
+    } catch (error) {
+        console.error('Error loading vendors:', error);
+    }
+}
+
+function renderVendors(vendors) {
+    const container = document.getElementById('vendorsList');
+    container.innerHTML = vendors.map(v => `
+        <div class="vendor-row">
+            <div>
+                <strong>${v.business_name}</strong><br>
+                <small>${v.address?.substring(0, 30)}...</small>
+            </div>
+            <div>${v.owner_name || '-'}<br><small>${v.owner_email || ''}</small></div>
+            <div>${v.category}</div>
+            <div>⭐ ${v.rating || 0} (${v.review_count || 0})</div>
+            <div>
+                <span class="status-badge ${v.is_active ? 'active' : 'inactive'}">
+                    ${v.is_active ? 'Active' : 'Inactive'}
+                </span>
+            </div>
+            <div style="display: flex; gap: 4px;">
+                <button class="btn btn-outline" onclick="toggleVendor('${v.id}', ${v.is_active})">
+                    ${v.is_active ? 'Deactivate' : 'Activate'}
+                </button>
+                <button class="btn btn-outline" onclick="viewVendor('${v.id}')">View</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function filterVendors() {
+    const search = document.getElementById('vendorSearch').value.toLowerCase();
+    const status = document.getElementById('statusFilter').value;
+    
+    const filtered = allVendors.filter(v => {
+        const matchesSearch = v.business_name.toLowerCase().includes(search) || 
+                             v.owner_name?.toLowerCase().includes(search);
+        const matchesStatus = !status || 
+            (status === 'active' && v.is_active) || 
+            (status === 'inactive' && !v.is_active);
+        return matchesSearch && matchesStatus;
+    });
+    
+    renderVendors(filtered);
+}
+
+async function toggleVendor(id, currentStatus) {
+    await api.toggleVendor(id, !currentStatus);
+    app.showToast(`Vendor ${currentStatus ? 'deactivated' : 'activated'}`, 'success');
+    loadVendors();
+}
+
+function viewVendor(id) {
+    window.location.href = `/pages/admin/vendor-detail.html?id=${id}`;
+}
+</script>

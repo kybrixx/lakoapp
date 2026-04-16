@@ -1,0 +1,77 @@
+<div class="product-card glass-card" onclick="viewProduct('{{product_id}}')">
+    <div class="product-image-container">
+        <img src="{{image}}" alt="{{name}}" class="product-image">
+        {{#if on_sale}}<span class="sale-badge">SALE</span>{{/if}}
+    </div>
+    <div class="product-details">
+        <h4>{{name}}</h4>
+        <p class="product-vendor">{{vendor_name}}</p>
+        <div class="product-price">
+            <span class="current-price">₱{{price}}</span>
+            {{#if original_price}}<span class="original-price">₱{{original_price}}</span>{{/if}}
+        </div>
+        <div class="product-rating">
+            <span class="stars">{{rating_stars}}</span>
+            <span>({{review_count}})</span>
+        </div>
+        <div class="product-meta">
+            <span class="stock {{#if in_stock}}in-stock{{else}}out-of-stock{{/if}}">
+                {{#if in_stock}}✓ In Stock{{else}}✗ Out of Stock{{/if}}
+            </span>
+            {{#if moq}}<span class="moq">MOQ: {{moq}}</span>{{/if}}
+        </div>
+    </div>
+</div>
+
+<style>
+.product-card { display: flex; gap: 16px; padding: 16px; cursor: pointer; transition: all 0.2s; }
+.product-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.product-image-container { position: relative; width: 100px; height: 100px; flex-shrink: 0; }
+.product-image { width: 100%; height: 100%; object-fit: cover; border-radius: 16px; }
+.sale-badge { position: absolute; top: 8px; left: 8px; background: #dc2626; color: white; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.product-details { flex: 1; }
+.product-details h4 { margin-bottom: 2px; }
+.product-vendor { font-size: 13px; color: var(--primary); margin-bottom: 8px; }
+.product-price { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.current-price { font-size: 20px; font-weight: 700; color: var(--text-primary); }
+.original-price { font-size: 14px; color: var(--text-secondary); text-decoration: line-through; }
+.product-rating { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.product-meta { display: flex; gap: 12px; font-size: 12px; }
+.stock.in-stock { color: #10b981; }
+.stock.out-of-stock { color: #dc2626; }
+.moq { color: var(--text-secondary); }
+@media (max-width: 480px) {
+    .product-card { flex-direction: column; }
+    .product-image-container { width: 100%; height: 180px; }
+}
+</style>
+
+<script>
+function renderProductCard(product) {
+    const rating = product.rating || 0;
+    return `
+        <div class="product-card glass-card" onclick="viewProduct('${product.id}')">
+            <div class="product-image-container">
+                <img src="${product.image || '/assets/images/placeholder.jpg'}" alt="${product.name}" class="product-image">
+            </div>
+            <div class="product-details">
+                <h4>${product.name}</h4>
+                <p class="product-vendor">${product.vendor_name || ''}</p>
+                <div class="product-price">
+                    <span class="current-price">₱${product.price || 0}</span>
+                </div>
+                <div class="product-rating">
+                    <span class="stars">${'★'.repeat(Math.floor(rating))}${'☆'.repeat(5 - Math.floor(rating))}</span>
+                    <span>(${product.review_count || 0})</span>
+                </div>
+                <div class="product-meta">
+                    <span class="stock ${product.stock > 0 ? 'in-stock' : 'out-of-stock'}">
+                        ${product.stock > 0 ? '✓ In Stock' : '✗ Out of Stock'}
+                    </span>
+                    ${product.moq ? `<span class="moq">MOQ: ${product.moq}</span>` : ''}
+                </div>
+            </div>
+        </div>
+    `;
+}
+</script>

@@ -1,0 +1,64 @@
+<div class="auth-container">
+    <div class="auth-card glass-card">
+        <div class="auth-header">
+            <div class="admin-icon">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <h1>Admin Access</h1>
+            <p class="auth-subtitle">Secure authentication required</p>
+        </div>
+
+        <div id="loginError" class="error-message" style="display: none;"></div>
+
+        <form id="loginForm" onsubmit="handleAdminLogin(event)">
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" id="email" class="form-control" placeholder="admin@lako.com" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">
+                <i class="fas fa-lock"></i> Authenticate
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            <a href="/" class="back-link">← Back to site</a>
+        </div>
+    </div>
+</div>
+
+<style>
+.auth-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; background: linear-gradient(135deg, #1a2a1f 0%, #0a3b1a 100%); }
+.auth-card { width: 100%; max-width: 420px; padding: 44px 40px; }
+.admin-icon { width: 80px; height: 80px; margin: 0 auto 20px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.admin-icon i { font-size: 40px; color: white; }
+.auth-header { text-align: center; margin-bottom: 36px; }
+.auth-header h1 { font-size: 28px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+.back-link { color: var(--text-secondary); text-decoration: none; font-size: 14px; }
+.back-link:hover { color: var(--primary); }
+.error-message { background: rgba(220,38,38,0.1); color: #dc2626; padding: 12px; border-radius: 24px; margin-bottom: 20px; text-align: center; }
+</style>
+
+<script>
+async function handleAdminLogin(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const errorDiv = document.getElementById('loginError');
+    
+    const result = await auth.login(email, password);
+    
+    if (result.success && result.user?.role === 'admin') {
+        window.location.href = '/pages/admin/dashboard.html';
+    } else {
+        errorDiv.textContent = 'Invalid credentials or insufficient permissions';
+        errorDiv.style.display = 'block';
+    }
+}
+</script>

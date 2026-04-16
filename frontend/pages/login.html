@@ -1,0 +1,177 @@
+<div class="auth-container">
+    <div class="auth-card glass-card">
+        <div class="auth-header">
+            <h1>sign in</h1>
+            <p class="auth-subtitle">welcome back.</p>
+        </div>
+        
+        <div id="loginError" class="error-message" style="display: none;"></div>
+        
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label class="form-label">email</label>
+                <input type="email" id="email" class="form-control" placeholder="your@email.com" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">password</label>
+                <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+            </div>
+            
+            <div class="form-actions">
+                <a href="/pages/reset-password.html" class="forgot-link">forgot password?</a>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-block">continue →</button>
+        </form>
+        
+        <div class="auth-footer">
+            <p>don't have an account?</p>
+            <button class="btn btn-secondary btn-block" onclick="goToRegister()">create account</button>
+        </div>
+        
+        <div class="auth-switch">
+            <a onclick="switchRole()">← switch role</a>
+        </div>
+    </div>
+</div>
+
+<style>
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 440px;
+    padding: 44px 40px;
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 36px;
+}
+
+.auth-header h1 {
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.auth-subtitle {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.form-actions {
+    text-align: right;
+    margin-bottom: 24px;
+}
+
+.forgot-link {
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 13px;
+    opacity: 0.7;
+}
+
+.forgot-link:hover {
+    opacity: 1;
+}
+
+.auth-footer {
+    margin-top: 24px;
+    text-align: center;
+}
+
+.auth-footer p {
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin-bottom: 12px;
+}
+
+.auth-switch {
+    text-align: center;
+    margin-top: 24px;
+}
+
+.auth-switch a {
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 13px;
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.auth-switch a:hover {
+    opacity: 1;
+}
+
+.error-message {
+    background: rgba(220, 38, 38, 0.1);
+    backdrop-filter: blur(8px);
+    color: #b91c1c;
+    padding: 12px;
+    border-radius: 24px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    text-align: center;
+}
+</style>
+
+<script>
+async function handleLogin(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const errorDiv = document.getElementById('loginError');
+    
+    if (!email || !password) {
+        showError('Please fill in all fields');
+        return;
+    }
+    
+    const result = await auth.login(email, password);
+    
+    if (result.success) {
+        const role = result.user.role;
+        localStorage.setItem('user_role', role);
+        
+        const redirects = {
+            'customer': '/pages/customer/dashboard.html',
+            'vendor': '/pages/vendor/dashboard.html',
+            'admin': '/pages/admin/dashboard.html'
+        };
+        
+        window.location.href = redirects[role] || '/pages/landing.html';
+    } else {
+        showError(result.error || 'Login failed');
+    }
+}
+
+function showError(message) {
+    const errorDiv = document.getElementById('loginError');
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+}
+
+function goToRegister() {
+    const role = localStorage.getItem('user_role') || 'customer';
+    if (role === 'vendor') {
+        window.location.href = '/pages/register.html?type=vendor';
+    } else {
+        window.location.href = '/pages/register.html';
+    }
+}
+
+function switchRole() {
+    localStorage.removeItem('user_role');
+    window.location.href = '/';
+}
+</script>

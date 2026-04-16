@@ -1,0 +1,141 @@
+<header class="app-header glass-card">
+    <div class="header-left">
+        <button class="menu-toggle" onclick="toggleSidebar()">
+            <i class="fas fa-bars"></i>
+        </button>
+        <a href="/" class="logo">lako</a>
+    </div>
+    
+    <div class="header-center">
+        <div class="search-bar">
+            <i class="fas fa-search"></i>
+            <input type="text" placeholder="Search vendors, products..." id="globalSearch">
+        </div>
+    </div>
+    
+    <div class="header-right">
+        <button class="header-btn" onclick="goToChat()">
+            <i class="fas fa-comment"></i>
+            <span class="badge" id="unreadBadge" style="display: none;">0</span>
+        </button>
+        <button class="header-btn" onclick="goToProfile()">
+            <i class="fas fa-user"></i>
+        </button>
+        <button class="header-btn" onclick="auth.logout(); window.location.href='/'">
+            <i class="fas fa-sign-out-alt"></i>
+        </button>
+    </div>
+</header>
+
+<style>
+.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    margin: 20px;
+    border-radius: 60px;
+}
+
+.header-left, .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.logo {
+    font-size: 22px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #0a3b1a, #1a6e3a);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-decoration: none;
+}
+
+.search-bar {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 40px;
+    padding: 8px 20px;
+    min-width: 300px;
+}
+
+.search-bar i {
+    color: #5a6e5a;
+    margin-right: 12px;
+}
+
+.search-bar input {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    width: 100%;
+}
+
+.header-btn {
+    background: rgba(0, 0, 0, 0.06);
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    color: #1a2a1f;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.header-btn:hover {
+    background: rgba(0, 0, 0, 0.12);
+}
+
+.badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #dc2626;
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 12px;
+    min-width: 18px;
+}
+
+.menu-toggle {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .menu-toggle {
+        display: block;
+    }
+    .search-bar {
+        min-width: auto;
+    }
+}
+</style>
+
+<script>
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) {
+        sidebar.classList.toggle('open');
+    }
+}
+
+function goToChat() {
+    const role = auth.getUserRole();
+    if (role === 'customer') {
+        window.location.href = '/pages/customer/chat-list.html';
+    } else if (role === 'vendor') {
+        window.location.href = '/pages/vendor/inquiries.html';
+    }
+}
+
+function goToProfile() {
+    const role = auth.getUserRole();
+    window.location.href = `/pages/${role}/profile.html`;
+}
+</script>

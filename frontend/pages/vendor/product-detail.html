@@ -1,0 +1,74 @@
+<div class="product-detail-page">
+    <div class="page-header glass-card">
+        <button class="btn btn-outline" onclick="history.back()">
+            <i class="fas fa-arrow-left"></i> Back
+        </button>
+        <h1>Product Details</h1>
+        <button class="btn btn-primary" onclick="editCurrentProduct()">Edit</button>
+    </div>
+
+    <div class="product-detail-content glass-card">
+        <div id="productDetail"></div>
+    </div>
+</div>
+
+<style>
+.product-detail-page { max-width: 900px; margin: 0 auto; padding: 20px; }
+.product-detail-content { padding: 32px; }
+.product-header { display: flex; gap: 24px; margin-bottom: 32px; }
+.product-image-large { width: 300px; height: 300px; border-radius: 24px; background: rgba(0,0,0,0.04); display: flex; align-items: center; justify-content: center; }
+.product-info { flex: 1; }
+.product-price-large { font-size: 32px; font-weight: 700; color: var(--primary); }
+.product-stats { display: flex; gap: 24px; margin: 20px 0; }
+.product-description { margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(0,0,0,0.06); }
+</style>
+
+<script>
+let productId = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    productId = params.get('id');
+    if (productId) loadProduct();
+});
+
+async function loadProduct() {
+    try {
+        const data = await api.request(`/vendor/products/${productId}`);
+        renderProduct(data.product);
+    } catch (error) {
+        console.error('Error loading product:', error);
+    }
+}
+
+function renderProduct(product) {
+    const container = document.getElementById('productDetail');
+    container.innerHTML = `
+        <div class="product-header">
+            <div class="product-image-large">
+                ${product.image ? `<img src="${product.image}" style="width:100%;height:100%;object-fit:cover;border-radius:24px;">` : '<i class="fas fa-box" style="font-size:64px;"></i>'}
+            </div>
+            <div class="product-info">
+                <h2>${product.name}</h2>
+                <p class="text-secondary">${product.category || 'Uncategorized'}</p>
+                <div class="product-price-large">₱${product.price || 0}</div>
+                <div class="product-stats">
+                    <span><i class="fas fa-star" style="color:#fbbf24;"></i> ${product.rating || 0} (${product.review_count || 0} reviews)</span>
+                    <span><i class="fas fa-box"></i> Stock: ${product.stock || 0}</span>
+                    <span><i class="fas fa-tag"></i> MOQ: ${product.moq || 1}</span>
+                </div>
+            </div>
+        </div>
+        <div class="product-description">
+            <h3>Description</h3>
+            <p>${product.description || 'No description provided.'}</p>
+        </div>
+    `;
+}
+
+function editCurrentProduct() {
+    if (productId) {
+        window.location.href = `/pages/vendor/catalog.html?edit=${productId}`;
+    }
+}
+</script>

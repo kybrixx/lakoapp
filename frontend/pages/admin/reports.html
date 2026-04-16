@@ -1,0 +1,161 @@
+<div class="admin-page">
+    <div class="page-header glass-card">
+        <h1>Reports & Analytics</h1>
+        <div class="header-actions">
+            <select class="form-control" id="dateRange">
+                <option value="today">Today</option>
+                <option value="week">This Week</option>
+                <option value="month" selected>This Month</option>
+                <option value="year">This Year</option>
+                <option value="all">All Time</option>
+            </select>
+            <button class="btn btn-primary" onclick="exportReport()">
+                <i class="fas fa-download"></i> Export Report
+            </button>
+        </div>
+    </div>
+
+    <div class="reports-grid">
+        <div class="glass-card">
+            <h3>User Growth</h3>
+            <canvas id="userGrowthChart"></canvas>
+        </div>
+        <div class="glass-card">
+            <h3>Vendor Growth</h3>
+            <canvas id="vendorGrowthChart"></canvas>
+        </div>
+        <div class="glass-card">
+            <h3>Traffic Overview</h3>
+            <canvas id="trafficChart"></canvas>
+        </div>
+        <div class="glass-card">
+            <h3>Content Activity</h3>
+            <canvas id="contentChart"></canvas>
+        </div>
+    </div>
+
+    <div class="glass-card" style="margin-top: 24px; padding: 24px;">
+        <h3>Top Performing Vendors</h3>
+        <div id="topVendors"></div>
+    </div>
+</div>
+
+<style>
+.reports-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-bottom: 24px; }
+.reports-grid .glass-card { padding: 24px; }
+.top-vendor-row { display: flex; align-items: center; justify-content: space-between; padding: 16px; border-bottom: 1px solid #eee; }
+.top-vendor-rank { width: 30px; font-weight: 700; color: var(--primary); }
+.top-vendor-name { flex: 1; font-weight: 500; }
+.top-vendor-stats { display: flex; gap: 24px; }
+@media (max-width: 1024px) { .reports-grid { grid-template-columns: 1fr; } }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+let charts = {};
+
+document.addEventListener('DOMContentLoaded', loadReports);
+document.getElementById('dateRange').addEventListener('change', loadReports);
+
+async function loadReports() {
+    try {
+        const data = await api.request('/admin/analytics');
+        renderCharts(data);
+        renderTopVendors(data.top_vendors || []);
+    } catch (error) {
+        console.error('Error loading reports:', error);
+    }
+}
+
+function renderCharts(data) {
+    // User Growth
+    if (charts.userGrowth) charts.userGrowth.destroy();
+    const userCtx = document.getElementById('userGrowthChart').getContext('2d');
+    charts.userGrowth = new Chart(userCtx, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'New Users',
+                data: [65, 78, 90, 112, 135, 158],
+                borderColor: '#0f5c2f',
+                backgroundColor: 'rgba(15,92,47,0.1)',
+                fill: true
+            }]
+        }
+    });
+    
+    // Vendor Growth
+    if (charts.vendorGrowth) charts.vendorGrowth.destroy();
+    const vendorCtx = document.getElementById('vendorGrowthChart').getContext('2d');
+    charts.vendorGrowth = new Chart(vendorCtx, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'New Vendors',
+                data: [12, 19, 25, 32, 40, 48],
+                borderColor: '#eab308',
+                backgroundColor: 'rgba(234,179,8,0.1)',
+                fill: true
+            }]
+        }
+    });
+    
+    // Traffic
+    if (charts.traffic) charts.traffic.destroy();
+    const trafficCtx = document.getElementById('trafficChart').getContext('2d');
+    charts.traffic = new Chart(trafficCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [{
+                label: 'Page Views',
+                data: [1250, 1400, 1580, 1720, 1950, 2100, 1800],
+                backgroundColor: '#0f5c2f'
+            }]
+        }
+    });
+    
+    // Content Activity
+    if (charts.content) charts.content.destroy();
+    const contentCtx = document.getElementById('contentChart').getContext('2d');
+    charts.content = new Chart(contentCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Posts', 'Reviews', 'Messages', 'Views'],
+            datasets: [{
+                data: [35, 25, 20, 20],
+                backgroundColor: ['#0f5c2f', '#eab308', '#3b82f6', '#ef4444']
+            }]
+        }
+    });
+}
+
+function renderTopVendors(vendors) {
+    const container = document.getElementById('topVendors');
+    const sampleVendors = [
+        { name: 'Best Street Foods', views: 2500, rating: 4.8 },
+        { name: 'Dimsum Express', views: 2100, rating: 4.6 },
+        { name: 'Coffee Corner', views: 1800, rating: 4.9 },
+        { name: 'Snack Haven', views: 1500, rating: 4.5 },
+        { name: 'Rice Meals Plus', views: 1200, rating: 4.7 }
+    ];
+    
+    container.innerHTML = sampleVendors.map((v, i) => `
+        <div class="top-vendor-row">
+            <span class="top-vendor-rank">#${i + 1}</span>
+            <span class="top-vendor-name">${v.name}</span>
+            <div class="top-vendor-stats">
+                <span><i class="fas fa-eye"></i> ${v.views}</span>
+                <span><i class="fas fa-star"></i> ${v.rating}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+function exportReport() {
+    app.showToast('Report downloading...', 'success');
+}
+</script>

@@ -1,0 +1,115 @@
+<div class="review-card glass-card">
+    <div class="review-header">
+        <div class="reviewer-info">
+            <div class="reviewer-avatar">{{customer_initial}}</div>
+            <div class="reviewer-details">
+                <span class="reviewer-name">{{customer_name}}</span>
+                <span class="review-date">{{review_date}}</span>
+            </div>
+        </div>
+        <div class="review-rating">
+            {{rating_stars}}
+        </div>
+    </div>
+    {{#if title}}<h5 class="review-title">{{title}}</h5>{{/if}}
+    <p class="review-content">{{content}}</p>
+    {{#if images}}
+    <div class="review-images">
+        {{#each images}}<img src="{{this}}" alt="Review image" onclick="viewImage('{{this}}')">{{/each}}
+    </div>
+    {{/if}}
+    {{#if product_name}}
+    <div class="reviewed-product">
+        <i class="fas fa-box"></i> Reviewed: {{product_name}}
+    </div>
+    {{/if}}
+    <div class="review-actions">
+        <button class="btn btn-outline" onclick="helpfulReview('{{review_id}}')">
+            <i class="far fa-thumbs-up"></i> Helpful ({{helpful_count}})
+        </button>
+        {{#if can_reply}}
+        <button class="btn btn-outline" onclick="replyToReview('{{review_id}}')">
+            <i class="far fa-comment"></i> Reply
+        </button>
+        {{/if}}
+    </div>
+    {{#if reply}}
+    <div class="review-reply">
+        <div class="reply-header">
+            <i class="fas fa-reply"></i> Vendor Response
+        </div>
+        <p>{{reply}}</p>
+    </div>
+    {{/if}}
+</div>
+
+<style>
+.review-card { padding: 20px; margin-bottom: 16px; }
+.review-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.reviewer-info { display: flex; gap: 12px; }
+.reviewer-avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--primary-light); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 18px; }
+.reviewer-details { display: flex; flex-direction: column; }
+.reviewer-name { font-weight: 600; }
+.review-date { font-size: 12px; color: var(--text-secondary); }
+.review-rating { color: #fbbf24; font-size: 16px; }
+.review-title { margin: 12px 0 8px; }
+.review-content { line-height: 1.6; color: var(--text-primary); }
+.review-images { display: flex; gap: 8px; margin-top: 12px; }
+.review-images img { width: 80px; height: 80px; object-fit: cover; border-radius: 12px; cursor: pointer; }
+.reviewed-product { margin-top: 12px; padding: 8px 12px; background: rgba(0,0,0,0.02); border-radius: 12px; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; }
+.review-actions { display: flex; gap: 16px; margin-top: 16px; }
+.review-reply { margin-top: 16px; padding: 16px; background: rgba(15,92,47,0.05); border-radius: 16px; border-left: 3px solid var(--primary); }
+.reply-header { font-weight: 600; margin-bottom: 8px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+</style>
+
+<script>
+function renderReviewCard(review, canReply = false) {
+    const rating = review.rating || 0;
+    const images = review.images ? JSON.parse(review.images) : [];
+    
+    return `
+        <div class="review-card glass-card">
+            <div class="review-header">
+                <div class="reviewer-info">
+                    <div class="reviewer-avatar">${review.customer_name?.charAt(0) || 'C'}</div>
+                    <div class="reviewer-details">
+                        <span class="reviewer-name">${review.customer_name || 'Customer'}</span>
+                        <span class="review-date">${formatTime(review.created_at)}</span>
+                    </div>
+                </div>
+                <div class="review-rating">
+                    ${'★'.repeat(rating)}${'☆'.repeat(5 - rating)}
+                </div>
+            </div>
+            ${review.title ? `<h5 class="review-title">${review.title}</h5>` : ''}
+            <p class="review-content">${review.comment || ''}</p>
+            ${images.length ? `
+                <div class="review-images">
+                    ${images.map(img => `<img src="${img}" alt="Review" onclick="viewImage('${img}')">`).join('')}
+                </div>
+            ` : ''}
+            ${review.product_name ? `
+                <div class="reviewed-product">
+                    <i class="fas fa-box"></i> Reviewed: ${review.product_name}
+                </div>
+            ` : ''}
+            <div class="review-actions">
+                <button class="btn btn-outline" onclick="helpfulReview('${review.id}')">
+                    <i class="far fa-thumbs-up"></i> Helpful (${review.helpful_count || 0})
+                </button>
+                ${canReply ? `
+                    <button class="btn btn-outline" onclick="replyToReview('${review.id}')">
+                        <i class="far fa-comment"></i> Reply
+                    </button>
+                ` : ''}
+            </div>
+        </div>
+    `;
+}
+
+function formatTime(timestamp) {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    return date.toLocaleDateString();
+}
+</script>

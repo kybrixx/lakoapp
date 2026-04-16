@@ -1,0 +1,232 @@
+<div class="auth-container">
+    <div class="auth-card glass-card">
+        <div class="auth-header">
+            <h1>create account</h1>
+            <p class="auth-subtitle">join the community.</p>
+        </div>
+        
+        <div id="registerError" class="error-message" style="display: none;"></div>
+        
+        <form id="registerForm" onsubmit="handleRegister(event)">
+            <div class="form-group">
+                <label class="form-label">full name</label>
+                <input type="text" id="fullName" class="form-control" placeholder="John Doe" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">email</label>
+                <input type="email" id="email" class="form-control" placeholder="your@email.com" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">phone (optional)</label>
+                <input type="tel" id="phone" class="form-control" placeholder="+63 xxx xxx xxxx">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">password</label>
+                    <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">confirm</label>
+                    <input type="password" id="confirmPassword" class="form-control" placeholder="••••••••" required>
+                </div>
+            </div>
+            
+            <div class="interests-section" id="interestsSection" style="display: none;">
+                <label class="form-label">interests (optional)</label>
+                <div class="category-buttons" id="categoryButtons"></div>
+            </div>
+            
+            <div class="eula-section">
+                <div class="eula-box">
+                    <strong>📄 End User License Agreement</strong><br>
+                    By using Lako you agree to our terms. We collect location data to find nearby vendors. 
+                    Profanity and harassment lead to suspension.
+                </div>
+                <div class="eula-check">
+                    <input type="checkbox" id="eulaAccepted" required>
+                    <label for="eulaAccepted">I agree to the terms</label>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-block">create account →</button>
+        </form>
+        
+        <div class="auth-footer">
+            <p>already have an account?</p>
+            <button class="btn btn-secondary btn-block" onclick="window.location.href='/pages/login.html'">sign in</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.interests-section {
+    margin-bottom: 20px;
+}
+
+.category-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.cat-btn {
+    padding: 6px 14px;
+    background: rgba(0, 0, 0, 0.04);
+    border-radius: 40px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+}
+
+.cat-btn.selected {
+    background: var(--primary);
+    color: white;
+}
+
+.eula-section {
+    margin: 20px 0;
+}
+
+.eula-box {
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 24px;
+    padding: 16px;
+    max-height: 150px;
+    overflow-y: auto;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #4a5a4a;
+    margin-bottom: 16px;
+}
+
+.eula-check {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.eula-check input {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.eula-check label {
+    font-size: 13px;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+</style>
+
+<script>
+const categories = [
+    'Street Foods', 'Dimsum', 'Snacks', 'Rice Meals', 
+    'Refreshments', 'Sari-sari Store', 'Bakery', 'Coffee Shop'
+];
+
+let selectedCategories = [];
+
+// Check if vendor registration
+const urlParams = new URLSearchParams(window.location.search);
+const isVendor = urlParams.get('type') === 'vendor';
+
+if (!isVendor) {
+    document.getElementById('interestsSection').style.display = 'block';
+    renderCategoryButtons();
+}
+
+function renderCategoryButtons() {
+    const container = document.getElementById('categoryButtons');
+    container.innerHTML = categories.map(cat => 
+        `<span class="cat-btn" data-cat="${cat}" onclick="toggleCategory('${cat}')">${cat.toLowerCase()}</span>`
+    ).join('');
+}
+
+function toggleCategory(cat) {
+    const btn = document.querySelector(`[data-cat="${cat}"]`);
+    if (selectedCategories.includes(cat)) {
+        selectedCategories = selectedCategories.filter(c => c !== cat);
+        btn.classList.remove('selected');
+    } else {
+        selectedCategories.push(cat);
+        btn.classList.add('selected');
+    }
+}
+
+async function handleRegister(e) {
+    e.preventDefault();
+    
+    const fullName = document.getElementById('fullName').value;
+    const email = document.getElementById('email').value;
+    const phone = document.getElementById('phone').value;
+    const password = document.getElementById('password').value;
+    const confirm = document.getElementById('confirmPassword').value;
+    const eulaAccepted = document.getElementById('eulaAccepted').checked;
+    
+    const errorDiv = document.getElementById('registerError');
+    
+    // Validation
+    if (!fullName) {
+        showError('Please enter your full name');
+        return;
+    }
+    
+    if (password !== confirm) {
+        showError('Passwords do not match');
+        return;
+    }
+    
+    if (password.length < 6) {
+        showError('Password must be at least 6 characters');
+        return;
+    }
+    
+    if (!eulaAccepted) {
+        showError('You must accept the EULA to continue');
+        return;
+    }
+    
+    const userData = {
+        email,
+        password,
+        full_name: fullName,
+        phone,
+        role: isVendor ? 'vendor' : 'customer',
+        category_preferences: isVendor ? null : selectedCategories.join(','),
+        eula_accepted: true
+    };
+    
+    const result = await auth.register(userData);
+    
+    if (result.success) {
+        const role = result.user.role;
+        localStorage.setItem('user_role', role);
+        
+        const redirects = {
+            'customer': '/pages/customer/dashboard.html',
+            'vendor': '/pages/vendor/dashboard.html'
+        };
+        
+        window.location.href = redirects[role];
+    } else {
+        showError(result.error || 'Registration failed');
+    }
+}
+
+function showError(message) {
+    const errorDiv = document.getElementById('registerError');
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
+}
+</script>

@@ -1,0 +1,87 @@
+<!-- Vendor Card Component - Include in other pages -->
+<div class="vendor-card glass-card" onclick="viewVendor('{{vendor_id}}')">
+    <div class="vendor-cover">
+        <img src="{{cover_image}}" alt="{{business_name}}">
+    </div>
+    <div class="vendor-logo-container">
+        <img src="{{logo}}" alt="{{business_name}}" class="vendor-logo">
+    </div>
+    <div class="vendor-info">
+        <h3>{{business_name}}</h3>
+        <p class="vendor-category">{{category}}</p>
+        <div class="vendor-rating">
+            <span class="stars">{{rating_stars}}</span>
+            <span>{{rating}} ({{review_count}} reviews)</span>
+        </div>
+        <p class="vendor-address"><i class="fas fa-map-marker-alt"></i> {{address}}</p>
+        <div class="vendor-tags">
+            <span class="tag" v-if="is_open">🟢 Open</span>
+            <span class="tag" v-if="is_verified">✓ Verified</span>
+            <span class="tag traffic-tag">👁️ {{traffic_count}} views</span>
+        </div>
+    </div>
+    <div class="vendor-actions">
+        <button class="btn btn-outline" onclick="event.stopPropagation(); saveVendor('{{vendor_id}}')">
+            <i class="far fa-bookmark"></i>
+        </button>
+        <button class="btn btn-outline" onclick="event.stopPropagation(); chatWithVendor('{{vendor_id}}')">
+            <i class="far fa-comment"></i>
+        </button>
+    </div>
+</div>
+
+<style>
+.vendor-card { position: relative; overflow: hidden; cursor: pointer; transition: all 0.2s; }
+.vendor-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
+.vendor-cover { height: 120px; overflow: hidden; }
+.vendor-cover img { width: 100%; height: 100%; object-fit: cover; }
+.vendor-logo-container { position: relative; margin-top: -40px; padding: 0 16px; }
+.vendor-logo { width: 80px; height: 80px; border-radius: 20px; border: 3px solid white; object-fit: cover; background: white; }
+.vendor-info { padding: 16px; }
+.vendor-category { color: var(--primary); font-size: 13px; margin: 4px 0; }
+.vendor-rating { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
+.stars { color: #fbbf24; }
+.vendor-address { font-size: 13px; color: var(--text-secondary); margin: 8px 0; display: flex; align-items: center; gap: 4px; }
+.vendor-tags { display: flex; gap: 8px; margin-top: 12px; }
+.tag { padding: 4px 10px; background: rgba(0,0,0,0.04); border-radius: 40px; font-size: 12px; }
+.traffic-tag { background: rgba(15,92,47,0.1); color: var(--primary); }
+.vendor-actions { position: absolute; top: 12px; right: 12px; display: flex; gap: 8px; }
+.vendor-actions .btn { width: 36px; height: 36px; padding: 0; border-radius: 50%; background: white; }
+</style>
+
+<script>
+function renderVendorCard(vendor) {
+    return `
+        <div class="vendor-card glass-card" onclick="viewVendor('${vendor.id}')">
+            <div class="vendor-cover">
+                <img src="${vendor.cover_image || '/assets/images/default-cover.jpg'}" alt="${vendor.business_name}">
+            </div>
+            <div class="vendor-logo-container">
+                <img src="${vendor.logo || '/assets/images/default-vendor.png'}" alt="${vendor.business_name}" class="vendor-logo">
+            </div>
+            <div class="vendor-info">
+                <h3>${vendor.business_name}</h3>
+                <p class="vendor-category">${vendor.category}</p>
+                <div class="vendor-rating">
+                    <span class="stars">${'★'.repeat(Math.floor(vendor.rating || 0))}${'☆'.repeat(5 - Math.floor(vendor.rating || 0))}</span>
+                    <span>${vendor.rating || 0} (${vendor.review_count || 0} reviews)</span>
+                </div>
+                <p class="vendor-address"><i class="fas fa-map-marker-alt"></i> ${vendor.address || 'Address not set'}</p>
+                <div class="vendor-tags">
+                    ${vendor.is_open ? '<span class="tag">🟢 Open</span>' : '<span class="tag">🔴 Closed</span>'}
+                    ${vendor.is_verified ? '<span class="tag">✓ Verified</span>' : ''}
+                    <span class="tag traffic-tag">👁️ ${vendor.traffic_count || 0} views</span>
+                </div>
+            </div>
+            <div class="vendor-actions">
+                <button class="btn btn-outline" onclick="event.stopPropagation(); toggleShortlist('${vendor.id}')">
+                    <i class="far fa-bookmark"></i>
+                </button>
+                <button class="btn btn-outline" onclick="event.stopPropagation(); chatWithVendor('${vendor.id}')">
+                    <i class="far fa-comment"></i>
+                </button>
+            </div>
+        </div>
+    `;
+}
+</script>

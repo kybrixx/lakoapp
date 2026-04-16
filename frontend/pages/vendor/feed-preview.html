@@ -1,0 +1,84 @@
+<div class="feed-preview-page">
+    <div class="page-header glass-card">
+        <h1>Feed Preview</h1>
+        <p class="text-secondary">See how your products appear in customer feeds</p>
+    </div>
+
+    <div class="preview-tabs glass-card">
+        <button class="tab-btn active" onclick="switchTab('trending')">Trending</button>
+        <button class="tab-btn" onclick="switchTab('most-reviewed')">Most Reviewed</button>
+        <button class="tab-btn" onclick="switchTab('recent')">Recently Reviewed</button>
+    </div>
+
+    <div id="feedContent" class="feed-content"></div>
+</div>
+
+<style>
+.feed-preview-page { max-width: 800px; margin: 0 auto; padding: 20px; }
+.preview-tabs { display: flex; gap: 8px; padding: 8px; margin-bottom: 24px; }
+.tab-btn { padding: 10px 24px; border: none; background: transparent; border-radius: 40px; cursor: pointer; font-weight: 500; transition: all 0.2s; }
+.tab-btn.active { background: var(--primary); color: white; }
+.feed-card { background: var(--surface); border-radius: 24px; padding: 20px; margin-bottom: 16px; border: 1px solid var(--border); }
+.feed-header { display: flex; gap: 12px; margin-bottom: 12px; }
+.feed-image { width: 100%; border-radius: 16px; margin: 12px 0; }
+.feed-stats { display: flex; gap: 24px; margin-top: 12px; color: var(--text-secondary); }
+</style>
+
+<script>
+let currentTab = 'trending';
+
+document.addEventListener('DOMContentLoaded', () => loadFeed('trending'));
+
+function switchTab(tab) {
+    currentTab = tab;
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    loadFeed(tab);
+}
+
+async function loadFeed(type) {
+    try {
+        let data;
+        if (type === 'trending') {
+            data = await api.request('/vendor/feed/trending');
+        } else if (type === 'most-reviewed') {
+            data = await api.request('/vendor/feed/most-reviewed');
+        } else {
+            data = await api.request('/vendor/feed/recent');
+        }
+        
+        renderFeed(data.products || []);
+    } catch (error) {
+        console.error('Error loading feed:', error);
+    }
+}
+
+function renderFeed(products) {
+    const container = document.getElementById('feedContent');
+    
+    if (!products.length) {
+        container.innerHTML = '<div class="glass-card" style="padding: 40px; text-align: center;">No products to display</div>';
+        return;
+    }
+    
+    container.innerHTML = products.map(p => `
+        <div class="feed-card">
+            <div class="feed-header">
+                <div class="post-avatar">${p.vendor_name?.charAt(0) || 'V'}</div>
+                <div>
+                    <div class="post-author">${p.vendor_name || 'Your Business'}</div>
+                    <div class="post-time">Featured Product</div>
+                </div>
+            </div>
+            <h4>${p.name}</h4>
+            <p>${p.description || 'No description'}</p>
+            ${p.image ? `<img src="${p.image}" class="feed-image" alt="${p.name}">` : ''}
+            <div class="feed-stats">
+                <span><i class="fas fa-star" style="color: #fbbf24;"></i> ${p.rating || 0}</span>
+                <span><i class="fas fa-comment"></i> ${p.review_count || 0} reviews</span>
+                <span><i class="fas fa-heart"></i> ${p.likes || 0}</span>
+            </div>
+        </div>
+    `).join('');
+}
+</script>

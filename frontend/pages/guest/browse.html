@@ -1,0 +1,295 @@
+<div class="guest-container">
+    <!-- Header -->
+    <header class="guest-header glass-card">
+        <div class="header-left">
+            <a href="/" class="logo">lako</a>
+        </div>
+        <div class="header-center">
+            <div class="guest-badge">
+                <i class="fas fa-eye"></i>
+                <span>Guest Mode</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <button class="btn btn-primary" onclick="window.location.href='/pages/login.html'">
+                Sign In
+            </button>
+            <button class="btn btn-outline" onclick="window.location.href='/pages/register.html'">
+                Register
+            </button>
+        </div>
+    </header>
+
+    <!-- Banner -->
+    <div class="guest-banner glass-card">
+        <i class="fas fa-info-circle"></i>
+        <span>You're browsing as a guest. <a href="/pages/login.html">Sign in</a> to chat with vendors, save favorites, and more!</span>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="search-section">
+        <div class="search-bar glass-card">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Search for vendors, products, or categories..." class="form-control">
+            <button class="btn btn-primary" onclick="performSearch()">Search</button>
+        </div>
+    </div>
+
+    <!-- Category Filters -->
+    <div class="category-filters glass-card">
+        <button class="category-btn active" onclick="filterByCategory('all')">All</button>
+        <button class="category-btn" onclick="filterByCategory('Street Foods')">Street Foods</button>
+        <button class="category-btn" onclick="filterByCategory('Dimsum')">Dimsum</button>
+        <button class="category-btn" onclick="filterByCategory('Snacks')">Snacks</button>
+        <button class="category-btn" onclick="filterByCategory('Rice Meals')">Rice Meals</button>
+        <button class="category-btn" onclick="filterByCategory('Refreshments')">Refreshments</button>
+        <button class="category-btn" onclick="filterByCategory('Bakery')">Bakery</button>
+        <button class="category-btn" onclick="filterByCategory('Coffee Shop')">Coffee</button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="guest-content">
+        <!-- Map Section -->
+        <div class="map-section glass-card">
+            <div class="section-header">
+                <h2><i class="fas fa-map-marked-alt"></i> Nearby Vendors</h2>
+                <div class="map-controls">
+                    <button class="btn btn-outline" onclick="toggleHeatmap()">
+                        <i class="fas fa-fire"></i> Heatmap
+                    </button>
+                    <button class="btn btn-outline" onclick="centerOnUser()">
+                        <i class="fas fa-location-dot"></i> My Location
+                    </button>
+                </div>
+            </div>
+            <div id="mapContainer" class="map-container"></div>
+        </div>
+
+        <!-- Vendors List -->
+        <div class="vendors-section">
+            <div class="section-header">
+                <h2><i class="fas fa-store"></i> Vendors Near You</h2>
+                <select id="radiusFilter" class="form-control" onchange="changeRadius()" style="width: auto;">
+                    <option value="5">5 km</option>
+                    <option value="10" selected>10 km</option>
+                    <option value="20">20 km</option>
+                    <option value="50">50 km</option>
+                </select>
+            </div>
+            <div id="vendorsList" class="vendors-grid"></div>
+        </div>
+
+        <!-- Trending Section -->
+        <div class="trending-section glass-card">
+            <div class="section-header">
+                <h2><i class="fas fa-fire"></i> Trending Now</h2>
+            </div>
+            <div id="trendingList" class="trending-list"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+.guest-container { min-height: 100vh; padding: 20px; max-width: 1400px; margin: 0 auto; }
+.guest-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; margin-bottom: 20px; border-radius: 60px; }
+.guest-badge { display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.06); padding: 8px 20px; border-radius: 40px; }
+.guest-banner { padding: 16px 24px; margin-bottom: 24px; border-radius: 40px; display: flex; align-items: center; gap: 12px; }
+.guest-banner a { color: var(--primary); font-weight: 500; }
+.search-section { margin-bottom: 24px; }
+.search-bar { display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 20px; }
+.search-bar i { color: var(--text-secondary); }
+.category-filters { display: flex; flex-wrap: wrap; gap: 8px; padding: 16px 20px; margin-bottom: 24px; }
+.category-btn { padding: 8px 20px; border: none; background: transparent; border-radius: 40px; cursor: pointer; font-size: 14px; transition: all 0.2s; }
+.category-btn:hover { background: rgba(0,0,0,0.04); }
+.category-btn.active { background: var(--primary); color: white; }
+.guest-content { display: flex; flex-direction: column; gap: 24px; }
+.map-section { padding: 24px; }
+.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.map-container { width: 100%; height: 350px; border-radius: 24px; overflow: hidden; }
+.vendors-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+.trending-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
+.trending-item { display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,255,255,0.5); border-radius: 16px; cursor: pointer; }
+.trending-item img { width: 50px; height: 50px; border-radius: 12px; object-fit: cover; }
+.trending-info { flex: 1; }
+.trending-name { font-weight: 600; margin-bottom: 2px; }
+.trending-vendor { font-size: 12px; color: var(--text-secondary); }
+.trending-rating { color: #fbbf24; font-size: 12px; }
+
+@media (max-width: 768px) {
+    .guest-header { flex-wrap: wrap; gap: 12px; }
+    .header-right { width: 100%; display: flex; gap: 8px; }
+    .header-right .btn { flex: 1; }
+    .category-filters { overflow-x: auto; flex-wrap: nowrap; }
+}
+</style>
+
+<script>
+let map = null;
+let heatmapLayer = null;
+let heatmapActive = false;
+let currentLocation = null;
+let vendors = [];
+let currentCategory = 'all';
+let currentRadius = 10;
+
+document.addEventListener('DOMContentLoaded', () => {
+    initMap();
+    getUserLocation();
+    loadTrending();
+});
+
+function initMap() {
+    const container = document.getElementById('mapContainer');
+    map = L.map(container).setView([14.5995, 120.9842], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
+}
+
+function getUserLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                currentLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                map.setView([currentLocation.lat, currentLocation.lng], 14);
+                L.marker([currentLocation.lat, currentLocation.lng]).addTo(map).bindPopup('You are here').openPopup();
+                loadNearbyVendors();
+            },
+            () => {
+                currentLocation = { lat: 14.5995, lng: 120.9842 };
+                loadNearbyVendors();
+            }
+        );
+    } else {
+        currentLocation = { lat: 14.5995, lng: 120.9842 };
+        loadNearbyVendors();
+    }
+}
+
+async function loadNearbyVendors() {
+    try {
+        const data = await api.getGuestVendors(currentLocation.lat, currentLocation.lng);
+        vendors = data.vendors || [];
+        renderMapMarkers();
+        renderVendorsList();
+    } catch (error) {
+        console.error('Error loading vendors:', error);
+    }
+}
+
+function renderMapMarkers() {
+    vendors.forEach(v => {
+        if (v.latitude && v.longitude) {
+            const marker = L.marker([v.latitude, v.longitude]).addTo(map);
+            marker.bindPopup(`
+                <div style="min-width: 200px;">
+                    <strong>${v.name}</strong><br>
+                    <small>${v.category}</small><br>
+                    <span style="color: #fbbf24;">${'★'.repeat(Math.floor(v.rating || 0))}</span><br>
+                    <button onclick="viewVendor('${v.id}')" style="margin-top: 8px; padding: 6px 12px; background: #0f5c2f; color: white; border: none; border-radius: 20px; cursor: pointer;">View Details</button>
+                </div>
+            `);
+        }
+    });
+}
+
+function renderVendorsList() {
+    const container = document.getElementById('vendorsList');
+    const filtered = currentCategory === 'all' ? vendors : vendors.filter(v => v.category === currentCategory);
+    
+    if (!filtered.length) {
+        container.innerHTML = '<div class="glass-card" style="padding: 40px; text-align: center; grid-column: 1/-1;">No vendors found</div>';
+        return;
+    }
+    
+    container.innerHTML = filtered.map(v => `
+        <div class="vendor-card glass-card" onclick="viewVendor('${v.id}')">
+            <div class="vendor-cover">
+                <img src="${v.cover_image || '/assets/images/default-cover.jpg'}" alt="${v.name}">
+            </div>
+            <div class="vendor-info">
+                <h3>${v.name}</h3>
+                <p class="vendor-category">${v.category}</p>
+                <div class="vendor-rating">
+                    <span>${'★'.repeat(Math.floor(v.rating || 0))}${'☆'.repeat(5 - Math.floor(v.rating || 0))}</span>
+                    <span>${v.rating || 0}</span>
+                </div>
+                <p class="vendor-address">📍 ${v.address || 'Address not set'}</p>
+                <p class="vendor-distance">📏 ${v.distance ? v.distance.toFixed(1) : '?'} km away</p>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function loadTrending() {
+    try {
+        const data = await api.request('/guest/trending');
+        const trending = data.trending || [];
+        const container = document.getElementById('trendingList');
+        
+        container.innerHTML = trending.map(p => `
+            <div class="trending-item" onclick="viewProduct('${p.id}')">
+                <img src="${p.image || '/assets/images/placeholder.jpg'}" alt="${p.name}">
+                <div class="trending-info">
+                    <div class="trending-name">${p.name}</div>
+                    <div class="trending-vendor">${p.vendor_name}</div>
+                    <div class="trending-rating">${'★'.repeat(Math.floor(p.rating || 0))} (${p.review_count})</div>
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Error loading trending:', error);
+    }
+}
+
+function filterByCategory(category) {
+    currentCategory = category;
+    document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    renderVendorsList();
+}
+
+function changeRadius() {
+    currentRadius = parseInt(document.getElementById('radiusFilter').value);
+    loadNearbyVendors();
+}
+
+async function toggleHeatmap() {
+    if (heatmapActive) {
+        if (heatmapLayer) map.removeLayer(heatmapLayer);
+        heatmapActive = false;
+    } else {
+        try {
+            const data = await api.getHeatmap();
+            const points = data.points.map(p => [p.latitude, p.longitude, p.weight]);
+            heatmapLayer = L.heatLayer(points, { radius: 25, blur: 15, maxZoom: 17 }).addTo(map);
+            heatmapActive = true;
+        } catch (error) {
+            console.error('Error loading heatmap:', error);
+        }
+    }
+}
+
+function centerOnUser() {
+    if (currentLocation) {
+        map.setView([currentLocation.lat, currentLocation.lng], 14);
+    } else {
+        getUserLocation();
+    }
+}
+
+function performSearch() {
+    const query = document.getElementById('searchInput').value;
+    if (query) {
+        window.location.href = `/pages/guest/search.html?q=${encodeURIComponent(query)}`;
+    }
+}
+
+function viewVendor(id) {
+    window.location.href = `/pages/guest/vendor-profile.html?id=${id}`;
+}
+
+function viewProduct(id) {
+    window.location.href = `/pages/guest/product-detail.html?id=${id}`;
+}
+</script>

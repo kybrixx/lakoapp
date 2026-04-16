@@ -1,0 +1,101 @@
+<div class="analytics-page">
+    <div class="page-header glass-card">
+        <h1>Analytics Dashboard</h1>
+        <button class="btn btn-outline" onclick="exportReport()">
+            <i class="fas fa-download"></i> Export Report
+        </button>
+    </div>
+
+    <div class="analytics-grid">
+        <div class="glass-card">
+            <h3>Profile Views</h3>
+            <div class="big-number" id="totalViews">0</div>
+            <canvas id="viewsChart"></canvas>
+        </div>
+        <div class="glass-card">
+            <h3>Product Performance</h3>
+            <div id="topProducts"></div>
+        </div>
+        <div class="glass-card">
+            <h3>Traffic by Hour</h3>
+            <canvas id="hourlyChart"></canvas>
+        </div>
+        <div class="glass-card">
+            <h3>Traffic by Day</h3>
+            <canvas id="dailyChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<style>
+.analytics-page { max-width: 1400px; margin: 0 auto; padding: 20px; }
+.analytics-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; margin-top: 24px; }
+.analytics-grid .glass-card { padding: 24px; }
+.big-number { font-size: 48px; font-weight: 700; color: var(--primary); text-align: center; margin: 20px 0; }
+@media (max-width: 768px) { .analytics-grid { grid-template-columns: 1fr; } }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+let charts = {};
+
+document.addEventListener('DOMContentLoaded', loadAnalytics);
+
+async function loadAnalytics() {
+    try {
+        const data = await api.getVendorAnalytics();
+        renderAnalytics(data);
+    } catch (error) {
+        console.error('Error loading analytics:', error);
+    }
+}
+
+function renderAnalytics(data) {
+    document.getElementById('totalViews').textContent = data.profile_views || 0;
+    
+    renderTopProducts(data.top_products || []);
+    renderCharts(data);
+}
+
+function renderTopProducts(products) {
+    const container = document.getElementById('topProducts');
+    if (!products.length) {
+        container.innerHTML = '<p class="text-secondary">No product data</p>';
+        return;
+    }
+    container.innerHTML = products.map((p, i) => `
+        <div class="top-product">
+            <span>${i+1}. ${p.name}</span>
+            <span>${p.reviews || 0} reviews</span>
+        </div>
+    `).join('');
+}
+
+function renderCharts(data) {
+    // Views chart
+    if (charts.views) charts.views.destroy();
+    charts.views = new Chart(document.getElementById('viewsChart'), {
+        type: 'line',
+        data: { labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], datasets: [{ label: 'Views', data: [12,19,15,22,30,28,25], borderColor: '#0f5c2f' }] }
+    });
+    
+    // Hourly chart
+    if (charts.hourly) charts.hourly.destroy();
+    charts.hourly = new Chart(document.getElementById('hourlyChart'), {
+        type: 'bar',
+        data: { labels: ['6am','9am','12pm','3pm','6pm','9pm'], datasets: [{ label: 'Traffic', data: [5,15,25,20,30,10], backgroundColor: '#0f5c2f' }] }
+    });
+    
+    // Daily chart
+    if (charts.daily) charts.daily.destroy();
+    charts.daily = new Chart(document.getElementById('dailyChart'), {
+        type: 'bar',
+        data: { labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], datasets: [{ label: 'Traffic', data: [20,25,18,30,35,40,15], backgroundColor: '#0f5c2f' }] }
+    });
+}
+
+function exportReport() {
+    app.showToast('Report download started', 'success');
+}
+</script>

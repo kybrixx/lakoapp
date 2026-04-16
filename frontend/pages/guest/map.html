@@ -1,0 +1,124 @@
+<div class="map-page">
+    <div class="map-header glass-card">
+        <button class="btn btn-outline" onclick="history.back()">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h2>Explore Map</h2>
+        <button class="btn btn-outline" onclick="window.location.href='/pages/login.html'">
+            Sign In
+        </button>
+    </div>
+
+    <div id="fullMap" class="full-map"></div>
+
+    <div class="map-controls glass-card">
+        <button class="btn btn-outline" onclick="toggleHeatmap()">
+            <i class="fas fa-fire"></i> Heatmap
+        </button>
+        <button class="btn btn-outline" onclick="centerOnUser()">
+            <i class="fas fa-location-dot"></i>
+        </button>
+        <select id="mapRadius" class="form-control" onchange="changeRadius()">
+            <option value="5">5 km</option>
+            <option value="10" selected>10 km</option>
+            <option value="20">20 km</option>
+        </select>
+    </div>
+
+    <div id="vendorInfoCard" class="vendor-info-card glass-card" style="display: none;">
+        <button class="close-btn" onclick="hideVendorCard()">&times;</button>
+        <div id="cardContent"></div>
+    </div>
+</div>
+
+<style>
+.map-page { position: relative; height: 100vh; display: flex; flex-direction: column; }
+.map-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; margin: 20px; }
+.full-map { flex: 1; width: 100%; border-radius: 24px; overflow: hidden; }
+.map-controls { position: absolute; bottom: 100px; right: 20px; display: flex; flex-direction: column; gap: 8px; padding: 12px; }
+.vendor-info-card { position: absolute; bottom: 20px; left: 20px; right: 20px; max-width: 400px; padding: 20px; }
+.close-btn { position: absolute; top: 12px; right: 12px; background: none; border: none; font-size: 20px; cursor: pointer; }
+@media (max-width: 768px) {
+    .vendor-info-card { left: 10px; right: 10px; }
+}
+</style>
+
+<script>
+let map = null;
+let heatmapLayer = null;
+let currentLocation = null;
+let markers = [];
+
+document.addEventListener('DOMContentLoaded', initFullMap);
+
+function initFullMap() {
+    map = L.map('fullMap').setView([14.5995, 120.9842], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    getUserLocation();
+    loadVendors();
+}
+
+function getUserLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+            currentLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            map.setView([currentLocation.lat, currentLocation.lng], 14);
+            L.marker([currentLocation.lat, currentLocation.lng]).addTo(map).bindPopup('You');
+        });
+    }
+}
+
+async function loadVendors() {
+    const radius = document.getElementById('mapRadius').value;
+    const data = await api.getGuestVendors(currentLocation?.lat || 14.5995, currentLocation?.lng || 120.9842);
+    
+    markers.forEach(m => map.removeLayer(m));
+    markers = [];
+    
+    data.vendors?.forEach(v => {
+        if (v.latitude && v.longitude) {
+            const marker = L.marker([v.latitude, v.longitude]).addTo(map);
+            marker.on('click', () => showVendorCard(v));
+            marker.bindTooltip(v.name);
+            markers.push(marker);
+        }
+    });
+}
+
+function showVendorCard(vendor) {
+    document.getElementById('cardContent').innerHTML = `
+        <h3>${vendor.name}</h3>
+        <p>${vendor.category}</p>
+        <p>⭐ ${vendor.rating || 0} (${vendor.review_count || 0})</p>
+        <p>📍 ${vendor.address || 'No address'}</p>
+        <button class="btn btn-primary" onclick="viewVendor('${vendor.id}')">View Details</button>
+    `;
+    document.getElementById('vendorInfoCard').style.display = 'block';
+}
+
+function hideVendorCard() {
+    document.getElementById('vendorInfoCard').style.display = 'none';
+}
+
+function viewVendor(id) {
+    window.location.href = `/pages/guest/vendor-profile.html?id=${id}`;
+}
+
+async function toggleHeatmap() {
+    if (heatmapLayer) {
+        map.removeLayer(heatmapLayer);
+        heatmapLayer = null;
+    } else {
+        const data = await api.getHeatmap();
+        heatmapLayer = L.heatLayer(data.points.map(p => [p.latitude, p.longitude, p.weight]), { radius: 25 }).addTo(map);
+    }
+}
+
+function centerOnUser() {
+    if (currentLocation) map.setView([currentLocation.lat, currentLocation.lng], 14);
+}
+
+function changeRadius() {
+    loadVendors();
+}
+</script>

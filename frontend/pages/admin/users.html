@@ -1,0 +1,120 @@
+<div class="admin-page">
+    <div class="page-header glass-card">
+        <h1>User Management</h1>
+        <div class="header-actions">
+            <input type="text" class="form-control" placeholder="Search users..." id="userSearch" oninput="filterUsers()">
+            <select class="form-control" id="roleFilter" onchange="filterUsers()">
+                <option value="">All Roles</option>
+                <option value="customer">Customers</option>
+                <option value="vendor">Vendors</option>
+                <option value="admin">Admins</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="users-grid" id="usersGrid"></div>
+</div>
+
+<style>
+.admin-page { max-width: 1400px; margin: 0 auto; padding: 20px; }
+.page-header { display: flex; justify-content: space-between; align-items: center; padding: 24px; margin-bottom: 24px; }
+.header-actions { display: flex; gap: 12px; }
+.users-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 20px; }
+.user-card { padding: 20px; }
+.user-header { display: flex; gap: 16px; margin-bottom: 16px; }
+.user-avatar { width: 60px; height: 60px; border-radius: 50%; background: var(--primary-light); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: 600; }
+.user-info { flex: 1; }
+.user-name { font-weight: 600; font-size: 18px; }
+.user-email { color: var(--text-secondary); font-size: 13px; }
+.user-role { display: inline-block; padding: 4px 12px; border-radius: 40px; font-size: 12px; font-weight: 500; margin-top: 8px; }
+.user-role.customer { background: #e0f2fe; color: #0284c7; }
+.user-role.vendor { background: #dcfce7; color: #16a34a; }
+.user-role.admin { background: #fef3c7; color: #d97706; }
+.user-stats { display: flex; gap: 16px; padding: 16px 0; border-top: 1px solid #eee; border-bottom: 1px solid #eee; }
+.user-stat { text-align: center; }
+.stat-num { font-size: 20px; font-weight: 700; }
+.stat-label { font-size: 11px; color: var(--text-secondary); }
+.user-actions { display: flex; gap: 8px; margin-top: 16px; }
+</style>
+
+<script>
+let allUsers = [];
+
+document.addEventListener('DOMContentLoaded', loadUsers);
+
+async function loadUsers() {
+    try {
+        const data = await api.getAdminUsers();
+        allUsers = data.users || [];
+        renderUsers(allUsers);
+    } catch (error) {
+        console.error('Error loading users:', error);
+    }
+}
+
+function renderUsers(users) {
+    const grid = document.getElementById('usersGrid');
+    grid.innerHTML = users.map(u => `
+        <div class="user-card glass-card">
+            <div class="user-header">
+                <div class="user-avatar">${u.full_name?.charAt(0) || u.email?.charAt(0) || 'U'}</div>
+                <div class="user-info">
+                    <div class="user-name">${u.full_name || 'No Name'}</div>
+                    <div class="user-email">${u.email}</div>
+                    <span class="user-role ${u.role}">${u.role}</span>
+                </div>
+            </div>
+            <div class="user-stats">
+                <div class="user-stat"><div class="stat-num">${u.review_count || 0}</div><div class="stat-label">Reviews</div></div>
+                <div class="user-stat"><div class="stat-num">${u.post_count || 0}</div><div class="stat-label">Posts</div></div>
+                <div class="user-stat"><div class="stat-num">${u.offense_count || 0}</div><div class="stat-label">Offenses</div></div>
+            </div>
+            <div class="user-actions">
+                ${u.is_suspended ? 
+                    `<button class="btn btn-outline" onclick="unsuspendUser('${u.id}')">Activate</button>` :
+                    `<button class="btn btn-outline" onclick="suspendUser('${u.id}')">Suspend</button>`
+                }
+                <button class="btn btn-outline" onclick="viewUser('${u.id}')">View</button>
+                <button class="btn btn-outline" onclick="deleteUser('${u.id}')"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function filterUsers() {
+    const search = document.getElementById('userSearch').value.toLowerCase();
+    const role = document.getElementById('roleFilter').value;
+    
+    const filtered = allUsers.filter(u => 
+        (u.full_name?.toLowerCase().includes(search) || u.email?.toLowerCase().includes(search)) &&
+        (!role || u.role === role)
+    );
+    
+    renderUsers(filtered);
+}
+
+async function suspendUser(id) {
+    const reason = prompt('Reason for suspension:');
+    if (!reason) return;
+    await api.suspendUser(id, reason);
+    app.showToast('User suspended', 'success');
+    loadUsers();
+}
+
+async function unsuspendUser(id) {
+    await api.request(`/admin/users/${id}/unsuspend`, { method: 'POST' });
+    app.showToast('User activated', 'success');
+    loadUsers();
+}
+
+async function deleteUser(id) {
+    if (!confirm('Delete this user permanently?')) return;
+    await api.request(`/admin/users/${id}`, { method: 'DELETE' });
+    app.showToast('User deleted', 'success');
+    loadUsers();
+}
+
+function viewUser(id) {
+    window.location.href = `/pages/admin/user-detail.html?id=${id}`;
+}
+</script>
