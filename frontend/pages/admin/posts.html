@@ -1,0 +1,160 @@
+<div class="admin-page">
+    <div class="page-header glass-card">
+        <h1>Posts Management</h1>
+        <div class="header-actions">
+            <input type="text" class="form-control" placeholder="Search posts..." id="postSearch" oninput="filterPosts()">
+            <select class="form-control" id="reportFilter" onchange="filterPosts()">
+                <option value="">All Posts</option>
+                <option value="reported">Reported Only</option>
+                <option value="hidden">Hidden Only</option>
+            </select>
+        </div>
+    </div>
+
+    <div id="postsList" class="posts-list"></div>
+    <div class="pagination" id="pagination"></div>
+</div>
+
+<style>
+.admin-page { max-width: 900px; margin: 0 auto; padding: 20px; }
+.posts-list { display: flex; flex-direction: column; gap: 16px; }
+.post-card { padding: 20px; }
+.post-header { display: flex; justify-content: space-between; margin-bottom: 16px; }
+.post-author { display: flex; align-items: center; gap: 12px; }
+.post-avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--primary-light); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; }
+.post-content { margin: 16px 0; }
+.post-images { display: flex; gap: 8px; margin: 12px 0; }
+.post-images img { width: 100px; height: 100px; object-fit: cover; border-radius: 12px; cursor: pointer; }
+.post-footer { display: flex; gap: 24px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #eee; }
+.post-actions { display: flex; gap: 8px; }
+.reported-badge { background: rgba(220,38,38,0.1); color: #dc2626; padding: 4px 10px; border-radius: 40px; font-size: 12px; }
+.hidden-badge { background: rgba(0,0,0,0.05); color: var(--text-secondary); padding: 4px 10px; border-radius: 40px; font-size: 12px; }
+</style>
+
+<script>
+let allPosts = [];
+let currentPage = 1;
+
+document.addEventListener('DOMContentLoaded', loadPosts);
+
+async function loadPosts() {
+    try {
+        const data = await api.get_all_posts();
+        allPosts = data.posts || [];
+        renderPosts();
+    } catch (error) {
+        console.error('Error loading posts:', error);
+    }
+}
+
+function renderPosts() {
+    const filtered = getFilteredPosts();
+    const container = document.getElementById('postsList');
+    
+    if (!filtered.length) {
+        container.innerHTML = '<p class="glass-card" style="padding: 40px; text-align: center;">No posts found</p>';
+        return;
+    }
+    
+    container.innerHTML = filtered.map(post => `
+        <div class="post-card glass-card">
+            <div class="post-header">
+                <div class="post-author">
+                    <div class="post-avatar">${post.user_name?.charAt(0) || 'U'}</div>
+                    <div>
+                        <strong>${post.user_name || 'User'}</strong>
+                        <div style="font-size: 12px; color: var(--text-secondary);">${formatTime(post.created_at)}</div>
+                    </div>
+                </div>
+                <div>
+                    ${post.reported ? '<span class="reported-badge"><i class="fas fa-flag"></i> Reported</span>' : ''}
+                    ${post.is_hidden ? '<span class="hidden-badge"><i class="fas fa-eye-slash"></i> Hidden</span>' : ''}
+                </div>
+            </div>
+            <div class="post-content">${escapeHtml(post.content)}</div>
+            ${post.images ? `
+                <div class="post-images">
+                    ${JSON.parse(post.images).map(img => `<img src="${img}" onclick="viewImage('${img}')">`).join('')}
+                </div>
+            ` : ''}
+            <div class="post-footer">
+                <span><i class="far fa-heart"></i> ${post.likes || 0} likes</span>
+                <span><i class="far fa-comment"></i> ${post.comment_count || 0} comments</span>
+                <span><i class="far fa-flag"></i> ${post.report_count || 0} reports</span>
+            </div>
+            <div class="post-actions">
+                <button class="btn btn-outline" onclick="viewPost('${post.id}')">View</button>
+                <button class="btn btn-outline" onclick="toggleHidePost('${post.id}', ${post.is_hidden})">
+                    ${post.is_hidden ? 'Unhide' : 'Hide'}
+                </button>
+                <button class="btn btn-outline" onclick="deletePost('${post.id}')">Delete</button>
+                ${post.reported ? `<button class="btn btn-outline" onclick="clearReports('${post.id}')">Clear Reports</button>` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+function getFilteredPosts() {
+    const search = document.getElementById('postSearch').value.toLowerCase();
+    const reportFilter = document.getElementById('reportFilter').value;
+    
+    return allPosts.filter(p => {
+        const matchesSearch = p.content?.toLowerCase().includes(search) ||
+                             p.user_name?.toLowerCase().includes(search);
+        const matchesFilter = !reportFilter ||
+            (reportFilter === 'reported' && p.reported) ||
+            (reportFilter === 'hidden' && p.is_hidden);
+        return matchesSearch && matchesFilter;
+    });
+}
+
+function filterPosts() {
+    renderPosts();
+}
+
+async function toggleHidePost(id, currentStatus) {
+    try {
+        await api.request(`/admin/posts/${id}/toggle`, {
+            method: 'POST',
+            body: JSON.stringify({ is_hidden: !currentStatus })
+        });
+        
+        const post = allPosts.find(p => p.id === id);
+        if (post) post.is_hidden = !currentStatus;
+        
+        renderPosts();
+        showToast(`Post ${currentStatus ? 'unhidden' : 'hidden'}`, 'success');
+    } catch (error) {
+        showToast('Failed to update post', 'error');
+    }
+}
+
+async function deletePost(id) {
+    if (!confirm('Delete this post?')) return;
+    
+    try {
+        await api.delete_post(id);
+        allPosts = allPosts.filter(p => p.id !== id);
+        renderPosts();
+        showToast('Post deleted', 'success');
+    } catch (error) {
+        showToast('Failed to delete', 'error');
+    }
+}
+
+async function clearReports(id) {
+    try {
+        await api.request(`/admin/posts/${id}/clear-reports`, { method: 'POST' });
+        const post = allPosts.find(p => p.id === id);
+        if (post) post.reported = false;
+        renderPosts();
+        showToast('Reports cleared', 'success');
+    } catch (error) {
+        showToast('Failed to clear reports', 'error');
+    }
+}
+
+function viewPost(id) {
+    window.location.href = `/pages/customer/post-detail.html?id=${id}`;
+}
+</script>

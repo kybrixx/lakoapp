@@ -1,0 +1,218 @@
+<div class="write-review-page">
+    <div class="page-header glass-card">
+        <button class="btn btn-outline" onclick="history.back()">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h1>Write a Review</h1>
+        <div></div>
+    </div>
+
+    <div class="review-form glass-card">
+        <div class="vendor-info">
+            <img id="vendorLogo" src="/assets/images/default-vendor.png" alt="Vendor">
+            <div>
+                <h3 id="vendorName">Loading...</h3>
+                <p id="vendorCategory"></p>
+            </div>
+        </div>
+
+        <form id="reviewForm" onsubmit="submitReview(event)">
+            <div class="form-group">
+                <label>Product (Optional)</label>
+                <select id="productSelect" class="form-control">
+                    <option value="">General Vendor Review</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Rating</label>
+                <div class="rating-input" id="ratingInput">
+                    <i class="far fa-star" data-rating="1"></i>
+                    <i class="far fa-star" data-rating="2"></i>
+                    <i class="far fa-star" data-rating="3"></i>
+                    <i class="far fa-star" data-rating="4"></i>
+                    <i class="far fa-star" data-rating="5"></i>
+                </div>
+                <input type="hidden" id="rating" value="0" required>
+            </div>
+
+            <div class="form-group">
+                <label>Title</label>
+                <input type="text" id="title" class="form-control" placeholder="Summarize your experience" maxlength="100">
+            </div>
+
+            <div class="form-group">
+                <label>Review</label>
+                <textarea id="comment" class="form-control" rows="5" placeholder="Share your experience with this vendor..." required></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Add Photos</label>
+                <div class="photo-upload">
+                    <input type="file" id="photoInput" accept="image/*" multiple style="display: none;" onchange="handlePhotoSelect(event)">
+                    <button type="button" class="btn btn-outline" onclick="document.getElementById('photoInput').click()">
+                        <i class="fas fa-camera"></i> Add Photos
+                    </button>
+                    <div id="photoPreview" class="photo-preview"></div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="history.back()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Submit Review</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.write-review-page { max-width: 700px; margin: 0 auto; padding: 20px; }
+.review-form { padding: 30px; }
+.vendor-info { display: flex; align-items: center; gap: 16px; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
+.vendor-info img { width: 60px; height: 60px; border-radius: 16px; object-fit: cover; }
+.rating-input { display: flex; gap: 8px; font-size: 32px; cursor: pointer; }
+.rating-input i { color: #d1d5db; transition: color 0.2s; }
+.rating-input i.active { color: #fbbf24; }
+.photo-preview { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.photo-preview img { width: 80px; height: 80px; border-radius: 12px; object-fit: cover; }
+.preview-item { position: relative; }
+.preview-item button { position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; border-radius: 50%; background: #dc2626; color: white; border: none; cursor: pointer; }
+.form-actions { display: flex; gap: 12px; justify-content: flex-end; margin-top: 30px; }
+</style>
+
+<script>
+let vendorId = null;
+let productId = null;
+let selectedRating = 0;
+let selectedPhotos = [];
+
+document.addEventListener('DOMContentLoaded', () => {
+    vendorId = getQueryParam('vendor');
+    productId = getQueryParam('product');
+    
+    if (vendorId) {
+        loadVendorInfo();
+        loadProducts();
+    }
+    
+    setupRatingInput();
+});
+
+async function loadVendorInfo() {
+    try {
+        const data = await api.getVendor(vendorId);
+        const vendor = data.vendor;
+        document.getElementById('vendorName').textContent = vendor.business_name;
+        document.getElementById('vendorCategory').textContent = vendor.category;
+        if (vendor.logo) {
+            document.getElementById('vendorLogo').src = vendor.logo;
+        }
+    } catch (error) {
+        console.error('Error loading vendor:', error);
+    }
+}
+
+async function loadProducts() {
+    try {
+        const data = await api.request(`/vendor/products?vendor_id=${vendorId}`);
+        const products = data.products || [];
+        const select = document.getElementById('productSelect');
+        
+        products.forEach(p => {
+            const option = document.createElement('option');
+            option.value = p.id;
+            option.textContent = p.name;
+            if (p.id === productId) option.selected = true;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error loading products:', error);
+    }
+}
+
+function setupRatingInput() {
+    const stars = document.querySelectorAll('.rating-input i');
+    stars.forEach((star, index) => {
+        star.addEventListener('click', () => {
+            selectedRating = index + 1;
+            document.getElementById('rating').value = selectedRating;
+            stars.forEach((s, i) => {
+                s.className = i <= index ? 'fas fa-star active' : 'far fa-star';
+            });
+        });
+        
+        star.addEventListener('mouseenter', () => {
+            stars.forEach((s, i) => {
+                s.className = i <= index ? 'fas fa-star' : 'far fa-star';
+            });
+        });
+    });
+    
+    document.querySelector('.rating-input').addEventListener('mouseleave', () => {
+        stars.forEach((s, i) => {
+            s.className = i < selectedRating ? 'fas fa-star active' : 'far fa-star';
+        });
+    });
+}
+
+async function handlePhotoSelect(e) {
+    const files = e.target.files;
+    const preview = document.getElementById('photoPreview');
+    
+    for (const file of files) {
+        const previewUrl = await imageHandler.previewImage(file);
+        selectedPhotos.push(file);
+        
+        const div = document.createElement('div');
+        div.className = 'preview-item';
+        div.innerHTML = `
+            <img src="${previewUrl}" alt="Preview">
+            <button type="button" onclick="removePhoto(${selectedPhotos.length - 1}, this.parentElement)">×</button>
+        `;
+        preview.appendChild(div);
+    }
+    
+    e.target.value = '';
+}
+
+function removePhoto(index, element) {
+    selectedPhotos.splice(index, 1);
+    element.remove();
+}
+
+async function submitReview(e) {
+    e.preventDefault();
+    
+    const rating = parseInt(document.getElementById('rating').value);
+    const title = document.getElementById('title').value;
+    const comment = document.getElementById('comment').value;
+    const productId = document.getElementById('productSelect').value;
+    
+    if (!rating) {
+        showToast('Please select a rating', 'error');
+        return;
+    }
+    
+    if (!comment) {
+        showToast('Please write a review', 'error');
+        return;
+    }
+    
+    try {
+        let images = null;
+        if (selectedPhotos.length) {
+            const result = await imageHandler.uploadMultipleImages(selectedPhotos, 'reviews');
+            images = JSON.stringify(result.uploaded.map(img => img.url));
+        }
+        
+        await api.createReview(vendorId, rating, title, comment, productId, images);
+        showToast('Review submitted!', 'success');
+        
+        setTimeout(() => {
+            window.location.href = `/pages/customer/vendor-profile.html?id=${vendorId}`;
+        }, 1500);
+    } catch (error) {
+        showToast('Failed to submit review', 'error');
+    }
+}
+</script>

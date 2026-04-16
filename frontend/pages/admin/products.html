@@ -1,0 +1,209 @@
+<div class="admin-page">
+    <div class="page-header glass-card">
+        <h1>Products Management</h1>
+        <div class="header-actions">
+            <input type="text" class="form-control" placeholder="Search products..." id="productSearch" oninput="filterProducts()">
+            <select class="form-control" id="statusFilter" onchange="filterProducts()">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Hidden</option>
+                <option value="outofstock">Out of Stock</option>
+            </select>
+            <select class="form-control" id="categoryFilter" onchange="filterProducts()">
+                <option value="">All Categories</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="products-table glass-card">
+        <div class="table-header">
+            <span>Product</span>
+            <span>Vendor</span>
+            <span>Category</span>
+            <span>Price</span>
+            <span>Stock</span>
+            <span>Status</span>
+            <span>Actions</span>
+        </div>
+        <div id="productsList"></div>
+    </div>
+
+    <div class="pagination" id="pagination"></div>
+</div>
+
+<style>
+.admin-page { max-width: 1400px; margin: 0 auto; padding: 20px; }
+.page-header { display: flex; flex-direction: column; gap: 16px; padding: 24px; margin-bottom: 24px; }
+.header-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.products-table { padding: 0; overflow: hidden; }
+.products-table .table-header { display: grid; grid-template-columns: 2fr 1.5fr 1fr 0.8fr 0.8fr 1fr 1fr; padding: 16px 20px; background: rgba(0,0,0,0.02); font-weight: 600; border-bottom: 1px solid #eee; }
+.product-row { display: grid; grid-template-columns: 2fr 1.5fr 1fr 0.8fr 0.8fr 1fr 1fr; padding: 16px 20px; border-bottom: 1px solid #eee; align-items: center; }
+.product-row:hover { background: rgba(0,0,0,0.01); }
+.product-info { display: flex; align-items: center; gap: 12px; }
+.product-thumb { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; }
+.stock-warning { color: #eab308; }
+.stock-danger { color: #dc2626; }
+@media (max-width: 1024px) {
+    .products-table .table-header, .product-row { grid-template-columns: 1fr; gap: 8px; }
+    .table-header span:not(:first-child) { display: none; }
+}
+</style>
+
+<script>
+let allProducts = [];
+let currentPage = 1;
+let perPage = 20;
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadProducts();
+    loadCategories();
+});
+
+async function loadProducts() {
+    try {
+        const data = await api.request('/admin/products');
+        allProducts = data.products || [];
+        renderProducts();
+    } catch (error) {
+        console.error('Error loading products:', error);
+    }
+}
+
+async function loadCategories() {
+    try {
+        const data = await api.request('/admin/categories');
+        const select = document.getElementById('categoryFilter');
+        data.categories?.forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat;
+            option.textContent = cat;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error loading categories:', error);
+    }
+}
+
+function renderProducts() {
+    const filtered = getFilteredProducts();
+    const start = (currentPage - 1) * perPage;
+    const paginated = filtered.slice(start, start + perPage);
+    
+    const container = document.getElementById('productsList');
+    
+    if (!paginated.length) {
+        container.innerHTML = '<p style="padding: 40px; text-align: center;">No products found</p>';
+        return;
+    }
+    
+    container.innerHTML = paginated.map(p => `
+        <div class="product-row">
+            <div class="product-info">
+                <img src="${p.image || '/assets/images/placeholder.jpg'}" class="product-thumb">
+                <div>
+                    <strong>${p.name}</strong><br>
+                    <small>ID: ${p.id?.slice(0,8)}</small>
+                </div>
+            </div>
+            <span>${p.vendor_name || 'Unknown'}</span>
+            <span>${p.category || '-'}</span>
+            <span>₱${p.price || 0}</span>
+            <span class="${p.stock === 0 ? 'stock-danger' : p.stock < 10 ? 'stock-warning' : ''}">${p.stock || 0}</span>
+            <span>
+                <span class="status-badge ${p.is_active ? 'active' : 'inactive'}">
+                    ${p.is_active ? 'Active' : 'Hidden'}
+                </span>
+            </span>
+            <span style="display: flex; gap: 4px;">
+                <button class="btn btn-outline" onclick="viewProduct('${p.id}')">View</button>
+                <button class="btn btn-outline" onclick="toggleProduct('${p.id}', ${p.is_active})">
+                    ${p.is_active ? 'Hide' : 'Show'}
+                </button>
+                <button class="btn btn-outline" onclick="deleteProduct('${p.id}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </span>
+        </div>
+    `).join('');
+    
+    renderPagination(filtered.length);
+}
+
+function getFilteredProducts() {
+    const search = document.getElementById('productSearch').value.toLowerCase();
+    const status = document.getElementById('statusFilter').value;
+    const category = document.getElementById('categoryFilter').value;
+    
+    return allProducts.filter(p => {
+        const matchesSearch = p.name.toLowerCase().includes(search) || 
+                             p.vendor_name?.toLowerCase().includes(search);
+        const matchesStatus = !status || 
+            (status === 'active' && p.is_active) ||
+            (status === 'inactive' && !p.is_active) ||
+            (status === 'outofstock' && p.stock === 0);
+        const matchesCategory = !category || p.category === category;
+        return matchesSearch && matchesStatus && matchesCategory;
+    });
+}
+
+function renderPagination(total) {
+    const totalPages = Math.ceil(total / perPage);
+    const container = document.getElementById('pagination');
+    
+    if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+    }
+    
+    let html = '';
+    for (let i = 1; i <= totalPages; i++) {
+        html += `<button class="page-item ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+    }
+    
+    container.innerHTML = html;
+}
+
+function goToPage(page) {
+    currentPage = page;
+    renderProducts();
+}
+
+function filterProducts() {
+    currentPage = 1;
+    renderProducts();
+}
+
+async function toggleProduct(id, currentStatus) {
+    try {
+        await api.request(`/admin/products/${id}/toggle`, {
+            method: 'POST',
+            body: JSON.stringify({ is_active: !currentStatus })
+        });
+        
+        const product = allProducts.find(p => p.id === id);
+        if (product) product.is_active = !currentStatus;
+        
+        renderProducts();
+        showToast(`Product ${currentStatus ? 'hidden' : 'shown'}`, 'success');
+    } catch (error) {
+        showToast('Failed to update product', 'error');
+    }
+}
+
+async function deleteProduct(id) {
+    if (!confirm('Delete this product? This action cannot be undone.')) return;
+    
+    try {
+        await api.request(`/admin/products/${id}`, { method: 'DELETE' });
+        allProducts = allProducts.filter(p => p.id !== id);
+        renderProducts();
+        showToast('Product deleted', 'success');
+    } catch (error) {
+        showToast('Failed to delete product', 'error');
+    }
+}
+
+function viewProduct(id) {
+    window.location.href = `/pages/admin/product-detail.html?id=${id}`;
+}
+</script>

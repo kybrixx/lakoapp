@@ -1,0 +1,138 @@
+<div class="catalog-page">
+    <div class="page-header glass-card">
+        <button class="btn btn-outline" onclick="history.back()">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <h1 id="vendorTitle">Catalog</h1>
+        <button class="btn btn-outline" onclick="toggleFilters()">
+            <i class="fas fa-filter"></i>
+        </button>
+    </div>
+
+    <div class="catalog-filters glass-card" id="catalogFilters" style="display: none;">
+        <input type="text" class="form-control" placeholder="Search products..." id="productSearch" oninput="filterProducts()">
+        <select class="form-control" id="categoryFilter" onchange="filterProducts()">
+            <option value="">All Categories</option>
+        </select>
+        <select class="form-control" id="sortFilter" onchange="filterProducts()">
+            <option value="name">Name</option>
+            <option value="price_low">Price: Low to High</option>
+            <option value="price_high">Price: High to Low</option>
+            <option value="rating">Highest Rated</option>
+            <option value="popular">Most Popular</option>
+        </select>
+    </div>
+
+    <div class="products-grid" id="productsGrid"></div>
+</div>
+
+<style>
+.catalog-page { max-width: 1200px; margin: 0 auto; padding: 20px; }
+.catalog-filters { display: flex; gap: 12px; padding: 16px 20px; margin-bottom: 20px; flex-wrap: wrap; }
+.products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; }
+.product-card { padding: 16px; cursor: pointer; }
+.product-card img { width: 100%; height: 150px; object-fit: cover; border-radius: 16px; margin-bottom: 12px; }
+</style>
+
+<script>
+let vendorId = null;
+let allProducts = [];
+let filteredProducts = [];
+
+document.addEventListener('DOMContentLoaded', () => {
+    vendorId = getQueryParam('id');
+    if (vendorId) loadCatalog();
+});
+
+async function loadCatalog() {
+    try {
+        const data = await api.request(`/customer/vendors/${vendorId}/products`);
+        allProducts = data.products || [];
+        filteredProducts = [...allProducts];
+        
+        const vendor = data.vendor || {};
+        document.getElementById('vendorTitle').textContent = `${vendor.business_name || 'Vendor'} Catalog`;
+        
+        loadCategories();
+        renderProducts();
+    } catch (error) {
+        console.error('Error loading catalog:', error);
+    }
+}
+
+function loadCategories() {
+    const categories = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
+    const select = document.getElementById('categoryFilter');
+    categories.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat;
+        option.textContent = cat;
+        select.appendChild(option);
+    });
+}
+
+function renderProducts() {
+    const grid = document.getElementById('productsGrid');
+    
+    if (!filteredProducts.length) {
+        grid.innerHTML = '<p class="glass-card" style="padding: 40px; text-align: center; grid-column: 1/-1;">No products found</p>';
+        return;
+    }
+    
+    grid.innerHTML = filteredProducts.map(p => `
+        <div class="product-card glass-card" onclick="viewProduct('${p.id}')">
+            <img src="${p.image || '/assets/images/placeholder.jpg'}" alt="${p.name}">
+            <h4>${p.name}</h4>
+            <p style="font-size: 13px; color: var(--text-secondary);">${p.category || ''}</p>
+            <div style="font-size: 20px; font-weight: 700; color: var(--primary);">₱${p.price || 0}</div>
+            <div style="display: flex; gap: 8px; margin-top: 8px;">
+                <span>⭐ ${p.rating || 0}</span>
+                <span>(${p.review_count || 0})</span>
+            </div>
+            ${p.stock === 0 ? '<span style="color: #dc2626; font-size: 12px;">Out of Stock</span>' : ''}
+        </div>
+    `).join('');
+}
+
+function filterProducts() {
+    const search = document.getElementById('productSearch').value.toLowerCase();
+    const category = document.getElementById('categoryFilter').value;
+    const sort = document.getElementById('sortFilter').value;
+    
+    filteredProducts = allProducts.filter(p => {
+        const matchesSearch = p.name.toLowerCase().includes(search) || 
+                             (p.description || '').toLowerCase().includes(search);
+        const matchesCategory = !category || p.category === category;
+        return matchesSearch && matchesCategory;
+    });
+    
+    // Sort
+    switch(sort) {
+        case 'price_low':
+            filteredProducts.sort((a, b) => (a.price || 0) - (b.price || 0));
+            break;
+        case 'price_high':
+            filteredProducts.sort((a, b) => (b.price || 0) - (a.price || 0));
+            break;
+        case 'rating':
+            filteredProducts.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+            break;
+        case 'popular':
+            filteredProducts.sort((a, b) => (b.review_count || 0) - (a.review_count || 0));
+            break;
+        default:
+            filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
+    }
+    
+    renderProducts();
+}
+
+function toggleFilters() {
+    const filters = document.getElementById('catalogFilters');
+    filters.style.display = filters.style.display === 'none' ? 'flex' : 'none';
+}
+
+function viewProduct(id) {
+    window.location.href = `/pages/customer/product-detail.html?id=${id}`;
+}
+</script>
