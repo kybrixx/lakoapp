@@ -1,0 +1,193 @@
+<div class="admin-page">
+    <div class="page-header glass-card">
+        <h1>Media Library</h1>
+        <div class="header-actions">
+            <input type="text" class="form-control" placeholder="Search media..." id="mediaSearch" oninput="filterMedia()">
+            <select class="form-control" id="typeFilter" onchange="filterMedia()">
+                <option value="">All Types</option>
+                <option value="avatar">Avatars</option>
+                <option value="cover">Covers</option>
+                <option value="product">Products</option>
+                <option value="post">Posts</option>
+                <option value="chat">Chat</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="media-stats glass-card">
+        <div class="stat-item">
+            <div class="stat-value" id="totalImages">0</div>
+            <div class="stat-label">Total Images</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" id="totalSize">0 MB</div>
+            <div class="stat-label">Total Size</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value" id="orphanedMedia">0</div>
+            <div class="stat-label">Orphaned Files</div>
+        </div>
+    </div>
+
+    <div class="media-grid" id="mediaGrid"></div>
+    <div class="pagination" id="pagination"></div>
+</div>
+
+<style>
+.admin-page { max-width: 1400px; margin: 0 auto; padding: 20px; }
+.media-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding: 24px; margin-bottom: 24px; text-align: center; }
+.media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+.media-card { padding: 12px; }
+.media-image { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 12px; cursor: pointer; }
+.media-info { margin-top: 8px; font-size: 12px; }
+.media-actions { display: flex; gap: 4px; margin-top: 8px; }
+.selected-media { border: 3px solid var(--primary); }
+.selection-bar { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--surface); padding: 16px 24px; border-radius: 60px; display: flex; gap: 16px; z-index: 100; }
+</style>
+
+<script>
+let allMedia = [];
+let selectedMedia = new Set();
+let currentPage = 1;
+
+document.addEventListener('DOMContentLoaded', loadMedia);
+
+async function loadMedia() {
+    try {
+        const data = await api.request('/admin/media');
+        allMedia = data.media || [];
+        updateStats(data.stats);
+        renderMedia();
+    } catch (error) {
+        console.error('Error loading media:', error);
+    }
+}
+
+function updateStats(stats) {
+    document.getElementById('totalImages').textContent = stats?.total || 0;
+    document.getElementById('totalSize').textContent = (stats?.total_size / 1024 / 1024).toFixed(2) + ' MB';
+    document.getElementById('orphanedMedia').textContent = stats?.orphaned || 0;
+}
+
+function renderMedia() {
+    const filtered = getFilteredMedia();
+    const container = document.getElementById('mediaGrid');
+    
+    if (!filtered.length) {
+        container.innerHTML = '<p class="glass-card" style="padding: 40px; text-align: center; grid-column: 1/-1;">No media found</p>';
+        return;
+    }
+    
+    container.innerHTML = filtered.map(m => `
+        <div class="media-card glass-card ${selectedMedia.has(m.id) ? 'selected-media' : ''}" onclick="toggleSelect('${m.id}')">
+            <img src="${m.url}" class="media-image" onerror="this.src='/assets/images/placeholder.jpg'">
+            <div class="media-info">
+                <div>${m.filename}</div>
+                <div style="color: var(--text-secondary);">${(m.size / 1024).toFixed(1)} KB · ${m.type}</div>
+                <div style="color: var(--text-secondary);">${formatTime(m.created_at)}</div>
+            </div>
+            <div class="media-actions">
+                <button class="btn btn-outline" onclick="event.stopPropagation(); viewMedia('${m.url}')">View</button>
+                <button class="btn btn-outline" onclick="event.stopPropagation(); deleteMedia('${m.id}')">Delete</button>
+            </div>
+        </div>
+    `).join('');
+    
+    updateSelectionBar();
+}
+
+function getFilteredMedia() {
+    const search = document.getElementById('mediaSearch').value.toLowerCase();
+    const type = document.getElementById('typeFilter').value;
+    
+    return allMedia.filter(m => {
+        const matchesSearch = m.filename?.toLowerCase().includes(search);
+        const matchesType = !type || m.type === type;
+        return matchesSearch && matchesType;
+    });
+}
+
+function filterMedia() {
+    renderMedia();
+}
+
+function toggleSelect(id) {
+    if (selectedMedia.has(id)) {
+        selectedMedia.delete(id);
+    } else {
+        selectedMedia.add(id);
+    }
+    renderMedia();
+}
+
+function selectAll() {
+    const filtered = getFilteredMedia();
+    filtered.forEach(m => selectedMedia.add(m.id));
+    renderMedia();
+}
+
+function clearSelection() {
+    selectedMedia.clear();
+    renderMedia();
+}
+
+function updateSelectionBar() {
+    if (selectedMedia.size === 0) {
+        document.getElementById('selectionBar')?.remove();
+        return;
+    }
+    
+    let bar = document.getElementById('selectionBar');
+    if (!bar) {
+        bar = document.createElement('div');
+        bar.id = 'selectionBar';
+        bar.className = 'selection-bar glass-card';
+        document.body.appendChild(bar);
+    }
+    
+    bar.innerHTML = `
+        <span>${selectedMedia.size} selected</span>
+        <button class="btn btn-outline" onclick="selectAll()">Select All</button>
+        <button class="btn btn-outline" onclick="clearSelection()">Clear</button>
+        <button class="btn btn-danger" onclick="deleteSelected()">Delete Selected</button>
+    `;
+}
+
+async function deleteMedia(id) {
+    if (!confirm('Delete this media?')) return;
+    
+    try {
+        await api.request(`/admin/media/${id}`, { method: 'DELETE' });
+        allMedia = allMedia.filter(m => m.id !== id);
+        selectedMedia.delete(id);
+        renderMedia();
+        showToast('Media deleted', 'success');
+    } catch (error) {
+        showToast('Failed to delete', 'error');
+    }
+}
+
+async function deleteSelected() {
+    if (!confirm(`Delete ${selectedMedia.size} files?`)) return;
+    
+    try {
+        await api.request('/admin/media/bulk-delete', {
+            method: 'POST',
+            body: JSON.stringify({ ids: Array.from(selectedMedia) })
+        });
+        
+        allMedia = allMedia.filter(m => !selectedMedia.has(m.id));
+        selectedMedia.clear();
+        renderMedia();
+        showToast('Media deleted', 'success');
+    } catch (error) {
+        showToast('Failed to delete', 'error');
+    }
+}
+
+function viewMedia(url) {
+    viewImage(url);
+}
+
+function formatTime(t) { return t ? new Date(t).toLocaleDateString() : ''; }
+</script>
