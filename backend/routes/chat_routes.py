@@ -2,122 +2,62 @@ from flask import Blueprint, request, jsonify
 from auth import Auth
 from database import db
 
-admin_bp = Blueprint('admin', __name__)
+chat_bp = Blueprint('chat', __name__)
 
-@admin_bp.before_request
-def check_admin():
+@chat_bp.before_request
+def check_auth():
     token = request.headers.get('X-Session-Token')
-    auth = Auth.require_role(token, ['admin'])
-    if not auth['authorized']:
-        return jsonify({'error': auth['error']}), 403
-    request.user = auth['user']
-
-@admin_bp.route('/stats', methods=['GET'])
-def get_stats():
-    stats = db.get_stats()
-    return jsonify(stats), 200
-
-@admin_bp.route('/users', methods=['GET'])
-def get_users():
-    role = request.args.get('role')
-    users = db.get_all_users(role)
-    return jsonify({'users': users}), 200
-
-@admin_bp.route('/users/<user_id>', methods=['GET'])
-def get_user(user_id):
-    user = db.get_user_by_id(user_id)
+    user = Auth.get_user_by_token(token)
     if not user:
-        return jsonify({'error': 'User not found'}), 404
-    return jsonify({'user': user}), 200
+        return jsonify({'error': 'Unauthorized'}), 401
+    if user.get('is_suspended'):
+        return jsonify({'error': 'Account suspended'}), 403
+    request.user = user
 
-@admin_bp.route('/users/<user_id>', methods=['DELETE'])
-def delete_user(user_id):
-    db.delete_user(user_id)
-    db.log_activity(request.user['id'], 'admin', 'delete_user', target_type='user', target_id=user_id)
-    return jsonify({'deleted': True}), 200
+@chat_bp.route('/conversations', methods=['GET'])
+def get_conversations():
+    conversations = db.get_conversations(request.user['id'])
+    return jsonify({'conversations': conversations}), 200
 
-@admin_bp.route('/users/<user_id>/suspend', methods=['POST'])
-def suspend_user(user_id):
+@chat_bp.route('/messages/<user_id>', methods=['GET'])
+def get_messages(user_id):
+    limit = request.args.get('limit', 50, type=int)
+    messages = db.get_messages(request.user['id'], user_id, limit)
+    return jsonify({'messages': messages}), 200
+
+@chat_bp.route('/send', methods=['POST'])
+def send_message():
     data = request.get_json()
-    reason = data.get('reason', 'Violation of terms')
-    days = data.get('days')
+    receiver_id = data.get('receiver_id')
+    message = data.get('message')
+    images = data.get('images')
     
-    db.suspend_user(user_id, reason, days)
-    db.log_activity(request.user['id'], 'admin', 'suspend_user', target_type='user', target_id=user_id, details=reason)
-    return jsonify({'suspended': True}), 200
-
-@admin_bp.route('/users/<user_id>/unsuspend', methods=['POST'])
-def unsuspend_user(user_id):
-    db.unsuspend_user(user_id)
-    db.log_activity(request.user['id'], 'admin', 'unsuspend_user', target_type='user', target_id=user_id)
-    return jsonify({'unsuspended': True}), 200
-
-@admin_bp.route('/vendors', methods=['GET'])
-def get_vendors():
-    vendors = db.get_all_vendors()
-    return jsonify({'vendors': vendors}), 200
-
-@admin_bp.route('/vendors/<vendor_id>/toggle', methods=['POST'])
-def toggle_vendor(vendor_id):
-    data = request.get_json()
-    is_active = data.get('is_active', True)
+    if not receiver_id:
+        return jsonify({'error': 'Receiver ID required'}), 400
     
-    db.toggle_vendor_active(vendor_id, 1 if is_active else 0)
-    db.log_activity(request.user['id'], 'admin', 'toggle_vendor', target_type='vendor', target_id=vendor_id)
-    return jsonify({'active': is_active}), 200
+    if not message and not images:
+        return jsonify({'error': 'Message or image required'}), 400
+    
+    message_id = db.send_message(request.user['id'], receiver_id, message, images)
+    return jsonify({'id': message_id, 'sent': True}), 201
 
-@admin_bp.route('/reviews', methods=['GET'])
-def get_all_reviews():
+@chat_bp.route('/mark-read/<sender_id>', methods=['POST'])
+def mark_as_read(sender_id):
     conn = db.get_connection()
     c = conn.cursor()
-    c.execute('''SELECT r.*, u.full_name as customer_name, v.business_name as vendor_name 
-                 FROM reviews r JOIN users u ON r.customer_id = u.id 
-                 JOIN vendors v ON r.vendor_id = v.id ORDER BY r.created_at DESC''')
-    reviews = c.fetchall()
-    conn.close()
-    return jsonify({'reviews': [dict(r) for r in reviews]}), 200
-
-@admin_bp.route('/reviews/<review_id>/hide', methods=['POST'])
-def hide_review(review_id):
-    conn = db.get_connection()
-    c = conn.cursor()
-    c.execute('UPDATE reviews SET is_hidden = 1 WHERE id = ?', (review_id,))
+    c.execute('''UPDATE messages SET is_read = 1 
+                 WHERE sender_id = ? AND receiver_id = ? AND is_read = 0''',
+              (sender_id, request.user['id']))
     conn.commit()
     conn.close()
-    db.log_activity(request.user['id'], 'admin', 'hide_review', target_type='review', target_id=review_id)
-    return jsonify({'hidden': True}), 200
+    return jsonify({'marked': True}), 200
 
-@admin_bp.route('/reviews/<review_id>/unhide', methods=['POST'])
-def unhide_review(review_id):
+@chat_bp.route('/unread-count', methods=['GET'])
+def get_unread_count():
     conn = db.get_connection()
     c = conn.cursor()
-    c.execute('UPDATE reviews SET is_hidden = 0 WHERE id = ?', (review_id,))
-    conn.commit()
+    c.execute('SELECT SUM(unread_count) FROM conversations WHERE user1_id = ? OR user2_id = ?',
+              (request.user['id'], request.user['id']))
+    result = c.fetchone()
     conn.close()
-    return jsonify({'unhidden': True}), 200
-
-@admin_bp.route('/posts', methods=['GET'])
-def get_all_posts():
-    conn = db.get_connection()
-    c = conn.cursor()
-    c.execute('''SELECT p.*, u.full_name as user_name FROM posts p 
-                 JOIN users u ON p.user_id = u.id ORDER BY p.created_at DESC''')
-    posts = c.fetchall()
-    conn.close()
-    return jsonify({'posts': [dict(p) for p in posts]}), 200
-
-@admin_bp.route('/posts/<post_id>', methods=['DELETE'])
-def delete_post(post_id):
-    db.delete_post(post_id)
-    db.log_activity(request.user['id'], 'admin', 'delete_post', target_type='post', target_id=post_id)
-    return jsonify({'deleted': True}), 200
-
-@admin_bp.route('/activities', methods=['GET'])
-def get_all_activities():
-    limit = request.args.get('limit', 100, type=int)
-    conn = db.get_connection()
-    c = conn.cursor()
-    c.execute('SELECT * FROM activities ORDER BY created_at DESC LIMIT ?', (limit,))
-    activities = c.fetchall()
-    conn.close()
-    return jsonify({'activities': [dict(a) for a in activities]}), 200
+    return jsonify({'unread': result[0] or 0}), 200
