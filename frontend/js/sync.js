@@ -1,9 +1,10 @@
-// Sync Service for Offline-First Operations
+// Cache Service for Offline-First Operations
 class SyncService {
     constructor() {
         this.isOnline = navigator.onLine;
-        this.syncInProgress = false;
+        this.cacheInProgress = false;
         this.listeners = [];
+        this.cacheTTL = 3600000; // 1 hour default
         this.init();
     }
 
@@ -27,39 +28,50 @@ class SyncService {
         this.listeners.forEach(cb => cb(status));
     }
 
-    async sync() {
-        if (!this.isOnline || this.syncInProgress) return;
+    async cache() {
+        if (this.cacheInProgress) return;
         
-        this.syncInProgress = true;
-        showToast('Syncing data...', 'info', 2000);
+        this.cacheInProgress = true;
+        showToast('Caching data...', 'info', 2000);
         
         try {
-            // Pull changes from server
-            await this.pullChanges();
+            // Cache data from server
+            await this.cacheData();
             
-            // Push local changes to server
-            await this.pushChanges();
+            // Push local changes to server if online
+            if (this.isOnline) {
+                await this.pushChanges();
+            }
             
-            showToast('Sync complete', 'success', 2000);
+            showToast('Cache complete', 'success', 2000);
         } catch (error) {
-            console.error('Sync error:', error);
-            showToast('Sync failed', 'error');
+            console.error('Cache error:', error);
+            showToast('Cache failed', 'error');
         } finally {
-            this.syncInProgress = false;
+            this.cacheInProgress = false;
         }
     }
 
-    async pullChanges() {
+    async cacheData() {
         try {
-            const data = await api.pullChanges();
+            // Cache vendors
+            const vendors = await api.getNearbyVendors(14.5995, 120.9842, 50);
+            await localDB.cacheData('vendors', vendors.vendors || [], 7200000);
             
-            for (const [table, records] of Object.entries(data.changes || {})) {
-                if (records.length) {
-                    await localDB.save(table, records);
-                }
-            }
+            // Cache products
+            const products = await api.request('/customer/products');
+            await localDB.cacheData('products', products.products || [], 7200000);
+            
+            // Cache posts/feed
+            const feed = await api.request('/customer/feed');
+            await localDB.cacheData('feed', feed.posts || [], 3600000);
+            
+            // Cache user preferences
+            const settings = await api.request('/customer/settings');
+            await localDB.cacheData('user_settings', settings, 86400000);
+            
         } catch (error) {
-            console.error('Pull error:', error);
+            console.error('Data cache error:', error);
             throw error;
         }
     }
@@ -83,18 +95,28 @@ class SyncService {
     async queueAction(action, data) {
         await localDB.addToSyncQueue({ action, data });
         if (this.isOnline) {
-            this.sync();
+            this.cache();
         }
     }
 
-    startPeriodicSync(intervalMs = 300000) {
+    startPeriodicCache(intervalMs = 300000) {
         setInterval(() => {
-            if (this.isOnline) {
-                this.sync();
-            }
+            this.cache();
         }, intervalMs);
+    }
+
+    async getCached(key) {
+        return await localDB.getCached(key);
+    }
+
+    async clearCache() {
+        await localDB.clear('cache');
+        await localDB.clear('vendors');
+        await localDB.clear('products');
+        await localDB.clear('feed');
+        showToast('Cache cleared', 'success');
     }
 }
 
 const syncService = new SyncService();
-syncService.startPeriodicSync();
+syncService.startPeriodicCache();

@@ -16,12 +16,26 @@
 </div>
 
 <style>
+:root { --primary: #0f5c2f; --primary-dark: #0a4a25; --secondary: #5a6e5a; --background: linear-gradient(145deg, #e8f0e8 0%, #cde0cd 100%); --surface: rgba(255, 255, 255, 0.85); --text-primary: #1a2a1f; --text-secondary: #5a6e5a; --border: rgba(255, 255, 255, 0.4); --shadow: 0 8px 32px rgba(0, 0, 0, 0.08); }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--background); min-height: 100vh; color: var(--text-primary); }
+h1 { font-size: 28px; font-weight: 600; }
+.glass-card { background: var(--surface); backdrop-filter: blur(20px); border-radius: 24px; padding: 24px; border: 1px solid var(--border); box-shadow: var(--shadow); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; border: none; border-radius: 40px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-primary); }
+.page-header { display: flex; justify-content: space-between; align-items: center; padding: 24px; margin-bottom: 24px; }
+.page-header h1 { margin: 0; }
 .posts-page { max-width: 800px; margin: 0 auto; padding: 20px; }
 .posts-tabs { display: flex; gap: 8px; padding: 8px; margin-bottom: 24px; }
+.tab-btn { padding: 10px 20px; border: none; background: transparent; border-bottom: 2px solid transparent; cursor: pointer; color: var(--text-secondary); font-weight: 600; transition: all 0.2s; }
+.tab-btn.active { border-bottom-color: var(--primary); color: var(--primary); }
 .post-item { background: var(--surface); border-radius: 24px; padding: 20px; margin-bottom: 16px; border: 1px solid var(--border); }
 .post-content { margin: 16px 0; }
 .post-meta { display: flex; gap: 24px; color: var(--text-secondary); font-size: 13px; }
 .post-actions { display: flex; gap: 8px; margin-top: 16px; }
+@media (max-width: 768px) { .page-header { flex-direction: column; align-items: flex-start; } }
 </style>
 
 <script>
