@@ -1,922 +1,227 @@
-<div class="customer-dashboard">
-    <!-- Header -->
-    <header class="app-header glass-card">
-        <div class="header-left">
-            <button class="menu-toggle" onclick="toggleSidebar()">
-                <i class="fas fa-bars"></i>
-            </button>
-            <a href="/" class="logo">lako</a>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lako - Customer Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/universal.css">
+    <style>
+    :root {
+        --primary: #0f5c2f;
+        --primary-dark: #0a4a25;
+        --secondary: #5a6e5a;
+        --background: linear-gradient(145deg, #e8f0e8 0%, #cde0cd 100%);
+        --surface: rgba(255, 255, 255, 0.85);
+        --text-primary: #1a2a1f;
+        --text-secondary: #5a6e5a;
+        --border: rgba(255, 255, 255, 0.4);
+        --shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        --radius-lg: 48px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--background); min-height: 100vh; color: var(--text-primary); }
+    h1, h2, h3 { font-weight: 600; }
+    .header { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; margin: 16px; background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow); border: 1px solid var(--border); }
+    .logo { font-size: 24px; font-weight: 700; color: var(--primary); }
+    .header-actions { display: flex; gap: 12px; align-items: center; }
+    .btn { padding: 10px 20px; border: none; border-radius: 40px; font-weight: 600; cursor: pointer; background: var(--primary); color: white; transition: all 0.2s; }
+    .btn:hover { background: var(--primary-dark); transform: translateY(-1px); }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-primary); }
+    .btn-outline:hover { background: var(--primary); color: white; border-color: var(--primary); }
+    .layout { display: flex; padding: 20px; gap: 24px; max-width: 1400px; margin: 0 auto; }
+    .sidebar { width: 280px; background: var(--surface); border-radius: 24px; padding: 24px 16px; box-shadow: var(--shadow); border: 1px solid var(--border); height: fit-content; position: sticky; top: 20px; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 20px; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; }
+    .nav-item:hover { background: rgba(15, 92, 47, 0.05); color: var(--primary); }
+    .nav-item.active { background: var(--primary); color: white; }
+    .nav-item i { width: 18px; text-align: center; }
+    .main { flex: 1; background: var(--surface); border-radius: 24px; padding: 28px; box-shadow: var(--shadow); border: 1px solid var(--border); }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: rgba(15, 92, 47, 0.05); border-radius: 24px; padding: 24px; text-align: center; border: 1px solid var(--border); }
+    .stat-value { font-size: 32px; font-weight: 700; color: var(--primary); }
+    .stat-label { color: var(--text-secondary); font-size: 13px; margin-top: 8px; }
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .feed-card { background: rgba(15, 92, 47, 0.02); border-radius: 24px; padding: 20px; margin-bottom: 16px; border: 1px solid var(--border); }
+    .feed-header { display: flex; gap: 12px; margin-bottom: 12px; align-items: center; }
+    .avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+    .feed-actions { display: flex; gap: 24px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 13px; color: var(--text-secondary); }
+    .glass-card { background: var(--surface); border-radius: 24px; padding: 24px; border: 1px solid var(--border); box-shadow: var(--shadow); }
+    .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--surface); padding: 12px 24px; justify-content: space-around; border-radius: 40px 40px 0 0; box-shadow: var(--shadow); z-index: 100; }
+    .bottom-nav-item { display: flex; flex-direction: column; align-items: center; color: var(--text-secondary); cursor: pointer; font-size: 12px; }
+    .bottom-nav-item.active { color: var(--primary); }
+    @media (max-width: 768px) { .sidebar { display: none; } .bottom-nav { display: flex; } .layout { padding: 16px; padding-bottom: 80px; } .stats-grid { grid-template-columns: repeat(2, 1fr); } .header { flex-wrap: wrap; gap: 12px; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">lako / customer</div>
+        <div class="header-actions">
+            <button class="btn-outline" onclick="window.location.href='chat-list.html'"><i class="fas fa-comment"></i></button>
+            <button class="btn" onclick="logout()">Exit</button>
         </div>
-        <div class="header-center">
-            <div class="search-bar">
-                <i class="fas fa-search"></i>
-                <input type="text" placeholder="Search vendors, products..." id="globalSearch">
-            </div>
-        </div>
-        <div class="header-right">
-            <button class="header-btn" onclick="goToChat()">
-                <i class="fas fa-comment"></i>
-            </button>
-            <button class="header-btn" onclick="goToProfile()">
-                <i class="fas fa-user"></i>
-            </button>
-            <button class="header-btn" onclick="auth.logout(); window.location.href='/'">
-                <i class="fas fa-sign-out-alt"></i>
-            </button>
-        </div>
-    </header>
-
-    <!-- Main Layout -->
-    <div class="dashboard-layout">
-        <!-- Sidebar -->
-        <aside class="sidebar glass-card" id="sidebar">
-            <nav class="sidebar-nav">
-                <a class="nav-item active" onclick="loadSection('feed')">
-                    <i class="fas fa-newspaper"></i>
-                    <span>News Feed</span>
-                </a>
-                <a class="nav-item" onclick="loadSection('map')">
-                    <i class="fas fa-map-marked-alt"></i>
-                    <span>Map</span>
-                </a>
-                <a class="nav-item" onclick="loadSection('suggestions')">
-                    <i class="fas fa-lightbulb"></i>
-                    <span>Suggestions</span>
-                </a>
-                <a class="nav-item" onclick="loadSection('search')">
-                    <i class="fas fa-search"></i>
-                    <span>Search</span>
-                </a>
-                <a class="nav-item" onclick="loadSection('shortlist')">
-                    <i class="fas fa-bookmark"></i>
-                    <span>Shortlist</span>
-                </a>
-                <a class="nav-item" onclick="loadSection('activities')">
-                    <i class="fas fa-history"></i>
-                    <span>Activities</span>
-                </a>
-                <a class="nav-item" onclick="loadSection('settings')">
-                    <i class="fas fa-cog"></i>
-                    <span>Settings</span>
-                </a>
-            </nav>
-        </aside>
-
-        <!-- Main Content -->
-        <main class="main-content" id="mainContent">
-            <!-- Content loaded dynamically -->
-        </main>
     </div>
-
-    <!-- Bottom Navigation (Mobile) -->
-    <nav class="bottom-nav glass-card">
-        <a class="bottom-nav-item active" onclick="loadSection('feed')">
-            <i class="fas fa-newspaper"></i>
-            <span>Feed</span>
-        </a>
-        <a class="bottom-nav-item" onclick="loadSection('map')">
-            <i class="fas fa-map-marked-alt"></i>
-            <span>Map</span>
-        </a>
-        <a class="bottom-nav-item" onclick="loadSection('suggestions')">
-            <i class="fas fa-lightbulb"></i>
-            <span>Suggest</span>
-        </a>
-        <a class="bottom-nav-item" onclick="loadSection('shortlist')">
-            <i class="fas fa-bookmark"></i>
-            <span>Saved</span>
-        </a>
-        <a class="bottom-nav-item" onclick="loadSection('profile')">
-            <i class="fas fa-user"></i>
-            <span>Profile</span>
-        </a>
-    </nav>
-</div>
-
-<style>
-.customer-dashboard {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-}
-
-.dashboard-layout {
-    display: flex;
-    flex: 1;
-    padding: 20px;
-    gap: 24px;
-    max-width: 1400px;
-    margin: 0 auto;
-    width: 100%;
-}
-
-.sidebar {
-    width: 280px;
-    padding: 24px 16px;
-    height: fit-content;
-    position: sticky;
-    top: 20px;
-}
-
-.sidebar-nav {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.nav-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-    border-radius: 40px;
-    color: var(--text-secondary);
-    text-decoration: none;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.nav-item:hover {
-    background: rgba(0, 0, 0, 0.04);
-}
-
-.nav-item.active {
-    background: var(--primary);
-    color: white;
-}
-
-.nav-item i {
-    width: 20px;
-}
-
-.main-content {
-    flex: 1;
-    min-width: 0;
-}
-
-.bottom-nav {
-    display: none;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 12px 24px;
-    border-radius: 40px 40px 0 0;
-    justify-content: space-around;
-    z-index: 100;
-}
-
-.bottom-nav-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    color: var(--text-secondary);
-    text-decoration: none;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.bottom-nav-item.active {
-    color: var(--primary);
-}
-
-.bottom-nav-item i {
-    font-size: 20px;
-}
-
-/* Feed Section */
-.feed-container {
-    max-width: 600px;
-    margin: 0 auto;
-}
-
-.create-post-card {
-    background: var(--surface);
-    backdrop-filter: blur(20px);
-    border-radius: 24px;
-    padding: 20px;
-    margin-bottom: 20px;
-    border: 1px solid var(--border);
-}
-
-.create-post-card textarea {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    border-radius: 20px;
-    resize: none;
-    font-family: inherit;
-    margin-bottom: 12px;
-}
-
-.post-actions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.post-card {
-    background: var(--surface);
-    backdrop-filter: blur(20px);
-    border-radius: 24px;
-    padding: 20px;
-    margin-bottom: 16px;
-    border: 1px solid var(--border);
-}
-
-.post-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 12px;
-}
-
-.post-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: var(--primary-light);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 600;
-}
-
-.post-info {
-    flex: 1;
-}
-
-.post-author {
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.post-time {
-    font-size: 12px;
-    color: var(--text-secondary);
-}
-
-.post-content {
-    margin-bottom: 16px;
-    line-height: 1.6;
-}
-
-.post-images {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 8px;
-    margin-bottom: 16px;
-}
-
-.post-images img {
-    width: 100%;
-    border-radius: 16px;
-    object-fit: cover;
-}
-
-.post-footer {
-    display: flex;
-    gap: 24px;
-    border-top: 1px solid rgba(0, 0, 0, 0.06);
-    padding-top: 16px;
-}
-
-.post-action {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--text-secondary);
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.post-action:hover {
-    color: var(--primary);
-}
-
-.post-action.liked {
-    color: #dc2626;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .sidebar {
-        display: none;
-        position: fixed;
-        top: 80px;
-        left: 20px;
-        right: 20px;
-        z-index: 200;
-        width: auto;
-    }
     
-    .sidebar.open {
-        display: block;
-    }
+    <div class="layout">
+        <div class="sidebar">
+            <div class="nav-item active" onclick="loadSection('feed')"><i class="fas fa-newspaper"></i> News Feed</div>
+            <div class="nav-item" onclick="loadSection('map')"><i class="fas fa-map-marked-alt"></i> Map</div>
+            <div class="nav-item" onclick="loadSection('suggestions')"><i class="fas fa-lightbulb"></i> Suggestions</div>
+            <div class="nav-item" onclick="loadSection('search')"><i class="fas fa-search"></i> Search</div>
+            <div class="nav-item" onclick="loadSection('shortlist')"><i class="fas fa-bookmark"></i> Shortlist</div>
+            <div class="nav-item" onclick="loadSection('activities')"><i class="fas fa-history"></i> Activities</div>
+            <div class="nav-item" onclick="loadSection('profile')"><i class="fas fa-user"></i> Profile</div>
+        </div>
+        
+        <div class="main" id="mainContent">
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-value">12</div><div class="stat-label">Reviews</div></div>
+                <div class="stat-card"><div class="stat-value">5</div><div class="stat-label">Posts</div></div>
+                <div class="stat-card"><div class="stat-value">8</div><div class="stat-label">Saved</div></div>
+                <div class="stat-card"><div class="stat-value">24</div><div class="stat-label">Views</div></div>
+            </div>
+            
+            <div class="section-header">
+                <h2>Your Feed</h2>
+                <button class="btn" onclick="createPost()">+ New Post</button>
+            </div>
+            
+            <div id="feed">
+                <div class="feed-card">
+                    <div class="feed-header">
+                        <div class="avatar">J</div>
+                        <div><strong>John's Street Food</strong><br><small>2 hours ago</small></div>
+                    </div>
+                    <p>New batch of siomai ready! Come visit us today! 🥟</p>
+                    <div class="feed-actions">
+                        <span><i class="far fa-heart"></i> 24</span>
+                        <span><i class="far fa-comment"></i> 5</span>
+                        <span><i class="far fa-share-square"></i> Share</span>
+                    </div>
+                </div>
+                <div class="feed-card">
+                    <div class="feed-header">
+                        <div class="avatar">M</div>
+                        <div><strong>Maria's Bakeshop</strong><br><small>5 hours ago</small></div>
+                    </div>
+                    <p>Fresh pandesal every morning! 🍞</p>
+                    <div class="feed-actions">
+                        <span><i class="far fa-heart"></i> 18</span>
+                        <span><i class="far fa-comment"></i> 3</span>
+                        <span><i class="far fa-share-square"></i> Share</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     
-    .bottom-nav {
-        display: flex;
-    }
+    <div class="bottom-nav">
+        <div class="bottom-nav-item active"><i class="fas fa-newspaper"></i><span>Feed</span></div>
+        <div class="bottom-nav-item"><i class="fas fa-map-marked-alt"></i><span>Map</span></div>
+        <div class="bottom-nav-item"><i class="fas fa-lightbulb"></i><span>Suggest</span></div>
+        <div class="bottom-nav-item"><i class="fas fa-bookmark"></i><span>Saved</span></div>
+        <div class="bottom-nav-item"><i class="fas fa-user"></i><span>Profile</span></div>
+    </div>
     
-    .dashboard-layout {
-        padding-bottom: 80px;
-    }
-}
-</style>
-
-<script>
-let currentSection = 'feed';
-let currentLocation = null;
-
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
-    checkAuth();
-    getUserLocation();
-    loadSection('feed');
-    loadUnreadMessages();
-});
-
-function checkAuth() {
-    if (!auth.requireAuth()) {
-        return;
-    }
-    if (auth.getUserRole() !== 'customer') {
-        window.location.href = '/pages/login.html';
-    }
-}
-
-function getUserLocation() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            async (pos) => {
-                currentLocation = {
-                    lat: pos.coords.latitude,
-                    lng: pos.coords.longitude
-                };
-                await api.updateLocation(currentLocation.lat, currentLocation.lng);
-            },
-            (err) => {
-                console.error('Location error:', err);
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        
+        function logout() { localStorage.clear(); window.location.href = '/'; }
+        
+        async function loadSection(section) {
+            const mainContent = document.getElementById('mainContent');
+            
+            switch(section) {
+                case 'suggestions':
+                    await loadSuggestions();
+                    break;
+                case 'map':
+                    window.location.href = 'map.html';
+                    break;
+                case 'search':
+                    window.location.href = 'search.html';
+                    break;
+                case 'shortlist':
+                    window.location.href = 'shortlist.html';
+                    break;
+                case 'activities':
+                    window.location.href = 'activities.html';
+                    break;
+                case 'profile':
+                    window.location.href = 'profile.html';
+                    break;
+                default:
+                    window.location.href = 'news-feed.html';
             }
-        );
-    }
-}
-
-function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('open');
-}
-
-async function loadSection(section) {
-    currentSection = section;
-    
-    // Update active states
-    document.querySelectorAll('.nav-item, .bottom-nav-item').forEach(el => {
-        el.classList.remove('active');
-    });
-    document.querySelectorAll(`[onclick="loadSection('${section}')"]`).forEach(el => {
-        el.classList.add('active');
-    });
-    
-    const content = document.getElementById('mainContent');
-    
-    switch(section) {
-        case 'feed':
-            await loadFeed();
-            break;
-        case 'map':
-            loadMap();
-            break;
-        case 'suggestions':
-            await loadSuggestions();
-            break;
-        case 'search':
-            loadSearch();
-            break;
-        case 'shortlist':
-            await loadShortlist();
-            break;
-        case 'activities':
-            await loadActivities();
-            break;
-        case 'profile':
-            loadProfile();
-            break;
-        case 'settings':
-            loadSettings();
-            break;
-    }
-}
-
-async function loadFeed() {
-    const content = document.getElementById('mainContent');
-    content.innerHTML = `
-        <div class="feed-container">
-            <div class="create-post-card">
-                <textarea id="postContent" placeholder="What's on your mind?"></textarea>
-                <div class="post-actions">
-                    <button class="btn btn-outline" onclick="document.getElementById('postImage').click()">
-                        <i class="fas fa-image"></i> Add Photo
-                    </button>
-                    <input type="file" id="postImage" accept="image/*" style="display: none;" multiple>
-                    <button class="btn btn-primary" onclick="createPost()">Post</button>
-                </div>
-            </div>
-            <div id="feedPosts"></div>
-        </div>
-    `;
-    
-    await loadFeedPosts();
-}
-
-async function loadFeedPosts() {
-    try {
-        const data = await api.getFeed();
-        const posts = data.posts || [];
-        
-        const container = document.getElementById('feedPosts');
-        
-        if (posts.length === 0) {
-            container.innerHTML = `
-                <div class="glass-card" style="text-align: center; padding: 40px;">
-                    <p>No posts yet. Follow some vendors to see their updates!</p>
-                </div>
-            `;
-            return;
         }
         
-        container.innerHTML = posts.map(post => `
-            <div class="post-card" id="post-${post.id}">
-                <div class="post-header">
-                    <div class="post-avatar">
-                        ${post.user_avatar ? 
-                            `<img src="${post.user_avatar}" alt="${post.user_name}">` : 
-                            post.user_name?.charAt(0) || 'U'}
+        async function loadSuggestions() {
+            const token = localStorage.getItem('session_token');
+            const mainContent = document.getElementById('mainContent');
+            
+            try {
+                const res = await fetch(`${API_BASE}/customer/suggestions`, {
+                    headers: { 'X-Session-Token': token }
+                });
+                const data = await res.json();
+                
+                mainContent.innerHTML = `
+                    <div class="section-header">
+                        <h2><i class="fas fa-lightbulb"></i> Recommended For You</h2>
                     </div>
-                    <div class="post-info">
-                        <div class="post-author">${post.user_name || 'Unknown'}</div>
-                        <div class="post-time">${formatTime(post.created_at)}</div>
-                    </div>
-                </div>
-                <div class="post-content">${escapeHtml(post.content)}</div>
-                ${post.images ? `
-                    <div class="post-images">
-                        ${JSON.parse(post.images).map(img => 
-                            `<img src="${img}" alt="Post image" onclick="viewImage('${img}')">`
-                        ).join('')}
-                    </div>
-                ` : ''}
-                <div class="post-footer">
-                    <div class="post-action ${post.is_liked ? 'liked' : ''}" onclick="likePost('${post.id}')">
-                        <i class="fas fa-heart"></i>
-                        <span>${post.likes || 0}</span>
-                    </div>
-                    <div class="post-action" onclick="showComments('${post.id}')">
-                        <i class="fas fa-comment"></i>
-                        <span>${post.comment_count || 0}</span>
-                    </div>
-                    <div class="post-action" onclick="sharePost('${post.id}')">
-                        <i class="fas fa-share"></i>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-    } catch (error) {
-        console.error('Error loading feed:', error);
-    }
-}
-
-async function createPost() {
-    const content = document.getElementById('postContent').value;
-    
-    if (!content.trim()) {
-        app.showToast('Please enter some content', 'error');
-        return;
-    }
-    
-    try {
-        await api.createPost(content);
-        app.showToast('Post created!', 'success');
-        document.getElementById('postContent').value = '';
-        await loadFeedPosts();
-    } catch (error) {
-        app.showToast('Failed to create post', 'error');
-    }
-}
-
-async function likePost(postId) {
-    try {
-        await api.likePost(postId);
-        await loadFeedPosts();
-    } catch (error) {
-        console.error('Error liking post:', error);
-    }
-}
-
-function loadMap() {
-    const content = document.getElementById('mainContent');
-    content.innerHTML = `
-        <div class="map-section">
-            <div id="mapContainer" class="map-container" style="height: 500px;"></div>
-            <div class="map-controls">
-                <button class="btn btn-outline" onclick="toggleHeatmap()">
-                    <i class="fas fa-fire"></i> Heatmap
-                </button>
-                <button class="btn btn-outline" onclick="centerOnUser()">
-                    <i class="fas fa-location-dot"></i> My Location
-                </button>
-            </div>
-            <div id="nearbyVendors" class="nearby-vendors"></div>
-        </div>
-    `;
-    
-    initCustomerMap();
-}
-
-async function loadSuggestions() {
-    const content = document.getElementById('mainContent');
-    content.innerHTML = `
-        <div class="suggestions-container">
-            <h2>Suggestions for You</h2>
-            <div id="suggestionsContent" class="loading">Loading suggestions...</div>
-        </div>
-    `;
-    
-    try {
-        const data = await api.getSuggestions(currentLocation?.lat, currentLocation?.lng);
-        
-        document.getElementById('suggestionsContent').innerHTML = `
-            <div class="suggestion-section">
-                <h3>🔥 Trending Now</h3>
-                <div class="vendor-grid">
-                    ${(data.trending || []).map(v => renderVendorCard(v)).join('')}
-                </div>
-            </div>
-            <div class="suggestion-section">
-                <h3>⭐ Most Reviewed</h3>
-                <div class="vendor-grid">
-                    ${(data.most_reviewed || []).map(v => renderVendorCard(v)).join('')}
-                </div>
-            </div>
-            <div class="suggestion-section">
-                <h3>📍 Recommended for You</h3>
-                <div class="vendor-grid">
-                    ${(data.recommended || []).map(v => renderVendorCard(v)).join('')}
-                </div>
-            </div>
-        `;
-    } catch (error) {
-        document.getElementById('suggestionsContent').innerHTML = `
-            <p class="error">Failed to load suggestions</p>
-        `;
-    }
-}
-
-function renderVendorCard(vendor) {
-    return `
-        <div class="vendor-card glass-card" onclick="viewVendor('${vendor.id}')">
-            <div class="vendor-image">
-                ${vendor.logo ? 
-                    `<img src="${vendor.logo}" alt="${vendor.business_name}">` : 
-                    '<i class="fas fa-store"></i>'}
-            </div>
-            <div class="vendor-info">
-                <h4>${vendor.business_name}</h4>
-                <p class="vendor-category">${vendor.category}</p>
-                <div class="vendor-rating">
-                    ${'★'.repeat(Math.floor(vendor.rating || 0))}
-                    ${'☆'.repeat(5 - Math.floor(vendor.rating || 0))}
-                    <span>${vendor.rating || 0}</span>
-                </div>
-                ${vendor.distance ? `<p class="vendor-distance">📍 ${vendor.distance} km</p>` : ''}
-            </div>
-        </div>
-    `;
-}
-
-async function loadShortlist() {
-    const content = document.getElementById('mainContent');
-    content.innerHTML = `
-        <div class="shortlist-container">
-            <h2>My Shortlist</h2>
-            <div id="shortlistContent" class="loading">Loading...</div>
-        </div>
-    `;
-    
-    try {
-        const data = await api.getShortlist();
-        const vendors = data.shortlist || [];
-        
-        if (vendors.length === 0) {
-            document.getElementById('shortlistContent').innerHTML = `
-                <div class="empty-state glass-card">
-                    <i class="fas fa-bookmark"></i>
-                    <p>No saved vendors yet</p>
-                    <button class="btn btn-primary" onclick="loadSection('map')">Explore Vendors</button>
-                </div>
-            `;
-        } else {
-            document.getElementById('shortlistContent').innerHTML = `
-                <div class="vendor-list">
-                    ${vendors.map(v => renderVendorCard(v)).join('')}
-                </div>
-            `;
-        }
-    } catch (error) {
-        document.getElementById('shortlistContent').innerHTML = `
-            <p class="error">Failed to load shortlist</p>
-        `;
-    }
-}
-
-async function loadActivities() {
-    const content = document.getElementById('mainContent');
-    content.innerHTML = `
-        <div class="activities-container">
-            <h2>Recent Activities</h2>
-            <div id="activitiesContent" class="loading">Loading activities...</div>
-        </div>
-    `;
-    
-    try {
-        const data = await api.request('/customer/activities');
-        const activities = data.activities || [];
-        
-        if (activities.length === 0) {
-            document.getElementById('activitiesContent').innerHTML = `
-                <div class="empty-state glass-card">
-                    <i class="fas fa-history"></i>
-                    <p>No activities yet</p>
-                </div>
-            `;
-        } else {
-            document.getElementById('activitiesContent').innerHTML = `
-                <div class="activity-timeline">
-                    ${activities.map(a => `
-                        <div class="activity-item glass-card">
-                            <div class="activity-icon">
-                                <i class="fas fa-${getActivityIcon(a.action_type)}"></i>
-                            </div>
-                            <div class="activity-details">
-                                <p>${formatActivity(a)}</p>
-                                <span class="activity-time">${formatTime(a.created_at)}</span>
-                            </div>
+                    
+                    <div style="margin-bottom: 32px;">
+                        <h3 style="margin-bottom: 16px;">Suggested Vendors</h3>
+                        <div id="vendorSuggestions" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px;">
+                            ${data.vendors && data.vendors.length > 0 
+                                ? data.vendors.map(v => `
+                                    <div class="glass-card" style="cursor: pointer; transition: all 0.2s;" onclick="viewVendor('${v.id}')">
+                                        <h4>${v.name}</h4>
+                                        <p style="color: var(--text-secondary); font-size: 13px;">${v.category}</p>
+                                        <div style="margin: 12px 0;">
+                                            <span>⭐ ${v.rating || 0}</span>
+                                            <span style="margin-left: 10px;">📍 ${v.address || 'Address not set'}</span>
+                                        </div>
+                                        <small style="color: var(--text-secondary);">Based on your interests</small>
+                                    </div>
+                                `).join('')
+                                : '<p style="color: var(--text-secondary);">No vendor suggestions yet. Update your preferences!</p>'
+                            }
                         </div>
-                    `).join('')}
-                </div>
-            `;
-        }
-    } catch (error) {
-        document.getElementById('activitiesContent').innerHTML = `
-            <p class="error">Failed to load activities</p>
-        `;
-    }
-}
-
-function loadProfile() {
-    const user = auth.getUser();
-    const content = document.getElementById('mainContent');
-    content.innerHTML = `
-        <div class="profile-container">
-            <div class="profile-header glass-card">
-                <div class="profile-avatar">
-                    ${user.avatar ? 
-                        `<img src="${user.avatar}" alt="${user.full_name}">` : 
-                        `<div class="avatar-placeholder">${user.full_name?.charAt(0) || 'U'}</div>`}
-                </div>
-                <div class="profile-info">
-                    <h2>${user.full_name || 'User'}</h2>
-                    <p>${user.email}</p>
-                    <p>${user.phone || 'No phone'}</p>
-                </div>
-                <button class="btn btn-outline" onclick="editProfile()">Edit Profile</button>
-            </div>
-            
-            <div class="profile-stats glass-card">
-                <div class="stat-item">
-                    <span class="stat-value" id="reviewCount">-</span>
-                    <span class="stat-label">Reviews</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value" id="postCount">-</span>
-                    <span class="stat-label">Posts</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-value" id="shortlistCount">-</span>
-                    <span class="stat-label">Saved</span>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    loadProfileStats();
-}
-
-async function loadProfileStats() {
-    try {
-        const data = await api.request('/customer/activities');
-        // Calculate stats from activities
-        const activities = data.activities || [];
-        
-        const reviews = activities.filter(a => a.action_type === 'create_review').length;
-        const posts = activities.filter(a => a.action_type === 'create_post').length;
-        const shortlist = activities.filter(a => a.action_type === 'add_shortlist').length;
-        
-        document.getElementById('reviewCount').textContent = reviews;
-        document.getElementById('postCount').textContent = posts;
-        document.getElementById('shortlistCount').textContent = shortlist;
-    } catch (error) {
-        console.error('Error loading stats:', error);
-    }
-}
-
-function loadSettings() {
-    const content = document.getElementById('mainContent');
-    content.innerHTML = `
-        <div class="settings-container glass-card">
-            <h2>Settings</h2>
-            
-            <div class="settings-section">
-                <h3>Notifications</h3>
-                <div class="setting-item">
-                    <span>Push Notifications</span>
-                    <label class="toggle">
-                        <input type="checkbox" checked>
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-                <div class="setting-item">
-                    <span>Email Notifications</span>
-                    <label class="toggle">
-                        <input type="checkbox" checked>
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-            </div>
-            
-            <div class="settings-section">
-                <h3>Privacy</h3>
-                <div class="setting-item">
-                    <span>Share Location</span>
-                    <label class="toggle">
-                        <input type="checkbox" checked>
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-                <div class="setting-item">
-                    <span>Show Activity Status</span>
-                    <label class="toggle">
-                        <input type="checkbox" checked>
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-            </div>
-            
-            <div class="settings-section">
-                <h3>Feed Preferences</h3>
-                <div class="setting-item">
-                    <span>Default Sort</span>
-                    <select class="form-control">
-                        <option>Most Recent</option>
-                        <option>Most Popular</option>
-                        <option>Nearby First</option>
-                    </select>
-                </div>
-            </div>
-            
-            <div class="settings-actions">
-                <button class="btn btn-secondary" onclick="auth.logout(); window.location.href='/'">
-                    Sign Out
-                </button>
-            </div>
-        </div>
-    `;
-}
-
-// Utility functions
-function formatTime(timestamp) {
-    if (!timestamp) return '';
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diff = now - date;
-    
-    if (diff < 60000) return 'Just now';
-    if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-    if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
-    return date.toLocaleDateString();
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-function getActivityIcon(type) {
-    const icons = {
-        'create_review': 'star',
-        'create_post': 'pen',
-        'like_post': 'heart',
-        'add_shortlist': 'bookmark',
-        'view_vendor': 'eye',
-        'send_message': 'comment'
-    };
-    return icons[type] || 'circle';
-}
-
-function formatActivity(activity) {
-    const messages = {
-        'create_review': `Reviewed ${activity.details || 'a vendor'}`,
-        'create_post': 'Created a post',
-        'like_post': 'Liked a post',
-        'add_shortlist': 'Saved a vendor',
-        'view_vendor': 'Viewed a vendor',
-        'send_message': 'Sent a message'
-    };
-    return messages[activity.action_type] || activity.action_type;
-}
-
-function viewVendor(vendorId) {
-    window.location.href = `/pages/customer/vendor-profile.html?id=${vendorId}`;
-}
-
-function goToChat() {
-    window.location.href = '/pages/customer/chat-list.html';
-}
-
-function goToProfile() {
-    loadSection('profile');
-}
-
-async function loadUnreadMessages() {
-    try {
-        const data = await api.request('/chat/unread-count');
-        const badge = document.getElementById('unreadBadge');
-        if (badge && data.unread > 0) {
-            badge.textContent = data.unread;
-            badge.style.display = 'block';
-        }
-    } catch (error) {
-        // Ignore
-    }
-}
-
-// Initialize map functions
-function initCustomerMap() {
-    if (typeof L === 'undefined') {
-        loadLeaflet().then(() => renderCustomerMap());
-    } else {
-        renderCustomerMap();
-    }
-}
-
-function renderCustomerMap() {
-    if (!currentLocation) {
-        currentLocation = { lat: 14.5995, lng: 120.9842 };
-    }
-    
-    const map = L.map('mapContainer').setView([currentLocation.lat, currentLocation.lng], 14);
-    
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap'
-    }).addTo(map);
-    
-    L.marker([currentLocation.lat, currentLocation.lng])
-        .addTo(map)
-        .bindPopup('You are here')
-        .openPopup();
-    
-    // Load nearby vendors
-    api.getNearbyVendors(currentLocation.lat, currentLocation.lng).then(data => {
-        data.vendors?.forEach(v => {
-            if (v.latitude && v.longitude) {
-                L.marker([v.latitude, v.longitude])
-                    .addTo(map)
-                    .bindPopup(`
-                        <b>${v.name}</b><br>
-                        ${v.category}<br>
-                        ⭐ ${v.rating || 0}<br>
-                        <button onclick="viewVendor('${v.id}')">View Details</button>
-                    `);
+                    </div>
+                    
+                    <div>
+                        <h3 style="margin-bottom: 16px;">Recommended Products</h3>
+                        <div id="productSuggestions" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;">
+                            ${data.products && data.products.length > 0
+                                ? data.products.map(p => `
+                                    <div class="glass-card" style="cursor: pointer; transition: all 0.2s;" onclick="viewProduct('${p.id}')">
+                                        <div style="width: 100%; height: 150px; background: rgba(15, 92, 47, 0.05); border-radius: 16px; margin-bottom: 12px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-box" style="font-size: 32px; color: var(--primary);"></i>
+                                        </div>
+                                        <h4>${p.name}</h4>
+                                        <p style="color: var(--text-secondary); font-size: 13px;">${p.vendor_name || 'Unknown'}</p>
+                                        <p style="margin-top: 8px;"><strong>₱${p.price || 0}</strong></p>
+                                        <small style="color: var(--text-secondary);">${p.category || 'Uncategorized'}</small>
+                                    </div>
+                                `).join('')
+                                : '<p style="color: var(--text-secondary);">No product suggestions yet. Browse more items!</p>'
+                            }
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading suggestions:', error);
+                mainContent.innerHTML = '<p style="color: red;">Error loading suggestions</p>';
             }
-        });
-    });
-}
-
-function loadLeaflet() {
-    return new Promise((resolve) => {
-        const css = document.createElement('link');
-        css.rel = 'stylesheet';
-        css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-        document.head.appendChild(css);
+        }
         
-        const js = document.createElement('script');
-        js.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-        js.onload = resolve;
-        document.head.appendChild(js);
-    });
-}
-</script>
+        function viewVendor(id) { window.location.href = `vendor-profile.html?id=${id}`; }
+        function viewProduct(id) { window.location.href = `product-detail.html?id=${id}`; }
+        function createPost() { alert('Create post'); }
+        
+        const token = localStorage.getItem('session_token');
+        const role = localStorage.getItem('user_role');
+        if (!token || role !== 'customer') { window.location.href = '/pages/login.html'; }
+    </script>
+</body>
+</html>

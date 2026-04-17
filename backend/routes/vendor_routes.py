@@ -1,7 +1,8 @@
 from flask import Blueprint, request, jsonify
 from auth import Auth
 from database import db
-from map_service import MapService
+from services.map_service import MapService
+from services.suggestion_service import SuggestionService
 
 vendor_bp = Blueprint('vendor', __name__)
 
@@ -199,3 +200,18 @@ def get_analytics():
         'average_rating': vendor.get('rating', 0),
         'top_products': sorted(products, key=lambda x: x.get('review_count', 0), reverse=True)[:5]
     }), 200
+
+@vendor_bp.route('/suggestions', methods=['GET'])
+def get_operation_suggestions():
+    token = request.headers.get('X-Session-Token')
+    auth = Auth.require_role(token, ['vendor'])
+    
+    if not auth['authorized']:
+        return jsonify({'error': auth['error']}), 403
+    
+    vendor_id = get_vendor_id(auth['user'])
+    if not vendor_id:
+        return jsonify({'error': 'Vendor not found'}), 404
+    
+    suggestions = SuggestionService.get_vendor_operation_suggestions(vendor_id)
+    return jsonify(suggestions), 200
