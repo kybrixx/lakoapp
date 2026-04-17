@@ -12,11 +12,13 @@
     <div class="map-filters glass-card" id="mapFilters" style="display: none;">
         <select class="form-control" id="categoryFilter" onchange="filterMap()">
             <option value="">All Categories</option>
-            <option>Street Foods</option>
-            <option>Dimsum</option>
-            <option>Snacks</option>
-            <option>Rice Meals</option>
-            <option>Refreshments</option>
+            <option>Pancit</option>
+            <option>Pares</option>
+            <option>Isaw</option>
+            <option>Chicken</option>
+            <option>Corndogs</option>
+            <option>Coffee</option>
+            <option>Sari-Sari Store</option>
         </select>
         <select class="form-control" id="radiusFilter" onchange="filterMap()">
             <option value="5">5 km</option>
@@ -64,15 +66,41 @@
 </div>
 
 <style>
+:root {
+    --primary: #0f5c2f;
+    --primary-dark: #0a4a25;
+    --secondary: #5a6e5a;
+    --background: linear-gradient(145deg, #e8f0e8 0%, #cde0cd 100%);
+    --surface: rgba(255, 255, 255, 0.85);
+    --text-primary: #1a2a1f;
+    --text-secondary: #5a6e5a;
+    --border: rgba(255, 255, 255, 0.4);
+    --shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    --radius-lg: 48px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: var(--background); }
+h1, h2, h3, h4 { font-weight: 600; }
 .map-page { position: relative; height: 100vh; display: flex; flex-direction: column; }
-.map-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; margin: 10px; }
-.map-filters { display: flex; gap: 12px; padding: 16px; margin: 10px; }
-.full-map { flex: 1; width: 100%; border-radius: 24px; overflow: hidden; margin: 0 10px; }
-.map-controls { position: absolute; bottom: 100px; right: 20px; display: flex; flex-direction: column; gap: 8px; padding: 12px; }
-.vendor-info-card { position: absolute; bottom: 20px; left: 20px; right: 20px; max-width: 400px; padding: 20px; }
-.geofencing-panel { position: absolute; top: 180px; left: 20px; right: 20px; max-width: 350px; padding: 20px; }
-.fab { position: absolute; bottom: 100px; left: 20px; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-.close-btn { position: absolute; top: 12px; right: 12px; background: none; border: none; font-size: 20px; cursor: pointer; }
+.map-header { background: var(--surface); border-radius: 24px; display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; margin: 10px; border: 1px solid var(--border); box-shadow: var(--shadow); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 18px; border: 1px solid var(--border); border-radius: 20px; background: transparent; color: var(--text-primary); cursor: pointer; font-size: 13px; transition: all 0.2s; }
+.btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
+.btn-outline { background: transparent; border: 1px solid var(--border); }
+.btn-primary { background: var(--primary); color: white; border: none; }
+.btn-primary:hover { background: var(--primary-dark); }
+.map-filters { background: var(--surface); border-radius: 24px; display: flex; gap: 12px; padding: 16px; margin: 10px; border: 1px solid var(--border); box-shadow: var(--shadow); }
+.form-control { padding: 10px 16px; background: rgba(0,0,0,0.02); border: 1px solid var(--border); border-radius: 20px; font-size: 13px; outline: none; }
+.form-control:focus { border-color: var(--primary); }
+.full-map { flex: 1; width: 100%; border-radius: 24px; overflow: hidden; margin: 0 10px; border: 2px solid var(--border); }
+.map-controls { position: absolute; bottom: 100px; right: 20px; display: flex; flex-direction: column; gap: 8px; padding: 8px; }
+.vendor-info-card { position: absolute; bottom: 20px; left: 20px; right: 20px; max-width: 400px; background: var(--surface); border-radius: 24px; padding: 20px; border: 1px solid var(--border); box-shadow: var(--shadow); }
+.geofencing-panel { position: absolute; top: 180px; left: 20px; right: 20px; max-width: 350px; background: var(--surface); border-radius: 24px; padding: 20px; border: 1px solid var(--border); box-shadow: var(--shadow); }
+.geofencing-panel h4 { margin-bottom: 16px; }
+.geofencing-panel .form-control { display: block; margin-bottom: 12px; width: 100%; }
+.fab { position: absolute; bottom: 100px; left: 20px; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: var(--shadow); background: var(--primary); color: white; cursor: pointer; border: none; transition: all 0.2s; }
+.fab:hover { background: var(--primary-dark); transform: scale(1.1); }
+.close-btn { position: absolute; top: 12px; right: 12px; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--text-primary); }
+.glass-card { background: var(--surface); border-radius: 24px; padding: 24px; border: 1px solid var(--border); box-shadow: var(--shadow); }
 </style>
 
 <script>
