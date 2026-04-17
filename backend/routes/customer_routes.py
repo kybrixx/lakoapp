@@ -1,7 +1,8 @@
 from flask import Blueprint, request, jsonify
 from auth import Auth
 from database import db
-from map_service import MapService
+from services.map_service import MapService
+from services.suggestion_service import SuggestionService
 from utils import check_profanity
 
 customer_bp = Blueprint('customer', __name__)
@@ -196,20 +197,19 @@ def get_activities():
 def get_suggestions():
     token = request.headers.get('X-Session-Token')
     user = Auth.get_user_by_token(token)
-    lat = request.args.get('lat', type=float)
-    lng = request.args.get('lng', type=float)
     
-    # Get trending vendors (most traffic)
-    trending = MapService.get_nearby_vendors(lat, lng, 20)[:10]
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
     
-    # Get most reviewed
-    all_vendors = MapService.get_nearby_vendors(lat, lng, 20)
-    most_reviewed = sorted(all_vendors, key=lambda x: x.get('review_count', 0), reverse=True)[:10]
+    # Get vendor suggestions based on preferences
+    vendor_suggestions = SuggestionService.get_vendor_suggestions(user['id'], limit=10)
+    
+    # Get product suggestions based on preferences
+    product_suggestions = SuggestionService.get_product_suggestions(user['id'], limit=10)
     
     return jsonify({
-        'trending': trending,
-        'most_reviewed': most_reviewed,
-        'recommended': trending[:5]  # Placeholder for ML recommendations
+        'vendors': vendor_suggestions,
+        'products': product_suggestions
     }), 200
 
 @customer_bp.route('/heatmap', methods=['GET'])

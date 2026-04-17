@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from database import db
-from map_service import MapService
+from services.map_service import MapService
 
 guest_bp = Blueprint('guest', __name__)
 

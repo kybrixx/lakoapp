@@ -4,7 +4,6 @@ from .vendor_routes import vendor_bp
 from .admin_routes import admin_bp
 from .guest_routes import guest_bp
 from .chat_routes import chat_bp
-from .sync_routes import sync_bp
 from .upload_routes import upload_bp
 
 def register_routes(app):
@@ -14,5 +13,4 @@ def register_routes(app):
     app.register_blueprint(admin_bp, url_prefix='/api/admin')
     app.register_blueprint(guest_bp, url_prefix='/api/guest')
     app.register_blueprint(chat_bp, url_prefix='/api/chat')
-    app.register_blueprint(sync_bp, url_prefix='/api/sync')
     app.register_blueprint(upload_bp, url_prefix='/api/upload')
